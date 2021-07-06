@@ -1,0 +1,4 @@
+#Sat Jul 03 10:39:19 CST 2021
+base.0=/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/transforms/dexMerger/debug/0
+path.0=classes.dex
+renamed.0=classes.dex
