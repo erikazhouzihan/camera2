@@ -165,6 +165,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * An {@link AutoFitTextureView} for camera preview.为相机预览界面创建一个AutoFitTextureView
      */
+    //用来显示的页面
     private AutoFitTextureView mTextureView;
 
     /**
@@ -176,6 +177,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * A reference to the opened {@link CameraDevice}.
      */
+    //定义的CameraDevice对象
     private CameraDevice mCameraDevice;
 
     /**
@@ -263,7 +265,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * {@link CaptureRequest.Builder} for the camera preview
      */
-    //用于相机预览的CaptureRequest.Builder
+    //用于相机预览的CaptureRequest.Builder,他可以生成CaptureRequest对象（用来设置捕获照片的各种参数）
     private CaptureRequest.Builder mPreviewRequestBuilder;
 
     /**
@@ -277,26 +279,31 @@ public class Camera2BasicFragment extends Fragment
      *
      * @see #mCaptureCallback
      */
+    //用于拍照的相机状态的当前状态。
     private int mState = STATE_PREVIEW;
 
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
+    //一个 {@link Semaphore} 以防止应用程序在关闭相机之前退出。
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
     /**
      * Whether the current camera device supports Flash or not.
      */
+    //当前的摄像头设备是否支持闪光灯。
     private boolean mFlashSupported;
 
     /**
      * Orientation of the camera sensor
      */
+    //相机传感器的方向
     private int mSensorOrientation;
 
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
      */
+    //处理与 JPEG 捕获相关的事件的 {@link CameraCaptureSession.CaptureCallback}。
     private CameraCaptureSession.CaptureCallback mCaptureCallback
             = new CameraCaptureSession.CaptureCallback() {
 
@@ -399,8 +406,10 @@ public class Camera2BasicFragment extends Fragment
             int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
 
         // Collect the supported resolutions that are at least as big as the preview Surface
+        //收集至少与预览 Surface 一样大的受支持分辨率
         List<Size> bigEnough = new ArrayList<>();
         // Collect the supported resolutions that are smaller than the preview Surface
+        //收集支持的小于预览 Surface 的分辨率
         List<Size> notBigEnough = new ArrayList<>();
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
@@ -418,6 +427,7 @@ public class Camera2BasicFragment extends Fragment
 
         // Pick the smallest of those big enough. If there is no one big enough, pick the
         // largest of those not big enough.
+        //选择那些足够大的最小的。如果没有足够大的，则从那些不够大的中选择最大的。
         if (bigEnough.size() > 0) {
             return Collections.min(bigEnough, new CompareSizesByArea());
         } else if (notBigEnough.size() > 0) {
@@ -460,6 +470,7 @@ public class Camera2BasicFragment extends Fragment
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
+        //当屏幕关闭并重新打开时，SurfaceTexture已经可用，并且不会调用“onSurfaceTextureAvailable”。在这种情况下，我们可以打开一个相机并从这里开始预览（否则，我们会等到 Surface 在SurfaceTextureListener 中准备好）。
         if (mTextureView.isAvailable()) {
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
@@ -496,7 +507,7 @@ public class Camera2BasicFragment extends Fragment
     }
 
     /**
-     * Sets up member variables related to camera.
+     * Sets up member variables related to camera.设置与相机相关的成员变量。
      *
      * @param width  The width of available size for camera preview
      * @param height The height of available size for camera preview
@@ -507,10 +518,12 @@ public class Camera2BasicFragment extends Fragment
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : manager.getCameraIdList()) {
+                System.out.println("cameraId："+cameraId);
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
                 // We don't use a front facing camera in this sample.
+                //我们在此示例中不使用前置摄像头。
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
@@ -523,6 +536,7 @@ public class Camera2BasicFragment extends Fragment
                 }
 
 //                 For still image captures, we use the largest available size.
+                //对于静态图像捕获，我们使用最大的可用尺寸。
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
@@ -533,9 +547,12 @@ public class Camera2BasicFragment extends Fragment
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
+                //找出我们是否需要交换尺寸以获得相对于传感器坐标的预览尺寸。
                 int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
                 //noinspection ConstantConditions
+                //没有检查恒定条件//ConstantConditions
                 mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
                 boolean swappedDimensions = false;
                 switch (displayRotation) {
                     case Surface.ROTATION_0:
@@ -940,13 +957,12 @@ public class Camera2BasicFragment extends Fragment
             }
             case R.id.info: {
                 Activity activity = getActivity();
-                if (null != activity) {
-                    mCameraId = "1";
-                    new AlertDialog.Builder(activity)
-                            .setMessage(R.string.intro_message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                }
+//                if (null != activity) {
+//                    new AlertDialog.Builder(activity)
+//                            .setMessage(R.string.intro_message)
+//                            .setPositiveButton(android.R.string.ok, null)
+//                            .show();
+//                }
                 break;
 
 
