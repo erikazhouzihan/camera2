@@ -948,6 +948,32 @@ public class Camera2BasicFragment extends Fragment
 //        }
 //    }
 
+//    public void switchCamera() {
+//        if (mCameraId.equals("1")) {
+//            mCameraId = "0";
+//            closeCamera();
+//            reopenCamera(mCameraId);
+//
+//        } else if (mCameraId.equals("0")) {
+//            mCameraId = "1";
+//            closeCamera();
+//            reopenCamera(mCameraId);
+//        }
+//    }
+//    public void reopenCamera(String mCameraId) {
+//        if (mTextureView.isAvailable()) {
+//            Activity activity = new Activity();
+//            CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+//            try {
+//                manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+//            } catch (CameraAccessException e) {
+//                e.printStackTrace();
+//            }
+//        } else {
+//            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
+//        }
+//    }
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -963,6 +989,7 @@ public class Camera2BasicFragment extends Fragment
 //                            .setPositiveButton(android.R.string.ok, null)
 //                            .show();
 //                }
+
                 break;
 
 
