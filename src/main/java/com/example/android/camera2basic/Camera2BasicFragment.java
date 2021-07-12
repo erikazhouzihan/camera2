@@ -16,7 +16,10 @@
 
 package com.example.android.camera2basic;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -63,6 +66,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -162,6 +166,8 @@ public class Camera2BasicFragment extends Fragment
      */
     private String mCameraId;
 
+    private long currntTime;
+
     /**
      * An {@link AutoFitTextureView} for camera preview.为相机预览界面创建一个AutoFitTextureView
      */
@@ -186,6 +192,7 @@ public class Camera2BasicFragment extends Fragment
     //用于预览的尺码参数
     private Size mPreviewSize;
 
+    private String date;
     /**
      * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its state.
      */
@@ -458,7 +465,9 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mFile = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        date = sdf.format(System.currentTimeMillis());
+        mFile = new File(getActivity().getExternalFilesDir(null), date+".jpg");
     }
 
     @Override
@@ -518,7 +527,8 @@ public class Camera2BasicFragment extends Fragment
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : manager.getCameraIdList()) {
-                System.out.println("cameraId："+cameraId);
+                System.out.println("哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈"+mCameraId);
+                //System.out.println("cameraId："+cameraId);
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
@@ -613,7 +623,13 @@ public class Camera2BasicFragment extends Fragment
                 // Check if the flash is supported.
                 Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
                 mFlashSupported = available == null ? false : available;
-
+                if(mCameraId == null){
+                    cameraId = "0";
+                }else if(mCameraId == "1"){
+                    cameraId = "1";
+                }else {
+                    cameraId = "0";
+                }
                 mCameraId = cameraId;
                 return;
             }
@@ -904,6 +920,7 @@ public class Camera2BasicFragment extends Fragment
      * Unlock the focus. This method should be called when still image capture sequence is
      * finished.
      */
+    //解锁焦点。当静止图像捕获序列完成时应调用此方法。
     private void unlockFocus() {
         try {
             // Reset the auto-focus trigger
@@ -920,33 +937,83 @@ public class Camera2BasicFragment extends Fragment
             e.printStackTrace();
         }
     }
-//    private void switchCamera() {
-//        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+    @SuppressLint("MissingPermission")
+    public void openCamera(){
+        Activity activity = getActivity();
+        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        try{
+            manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+        }catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+    }
+    public void stopPreview(){
+        if(mCaptureSession != null){
+            try{
+                mCaptureSession.abortCaptures();
+                mCaptureSession.close();
+            } catch (CameraAccessException e){
+                e.printStackTrace();
+            }
+        }
+    }
+    private void switchCamera() {
+        Activity activity = getActivity();
+        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 //        try {
-//            for (String cameraId : cameraManager.getCameraIdList()) {
-//                CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+//            String[] cameraIds = manager.getCameraIdList();
+//            for (String id : cameraIds) {
+//                System.out.println("啊哈哈哈皇后皇后皇后皇后皇后皇后和" + id);
+//            }
+//        } catch (CameraAccessException e){
+//            e.printStackTrace();
+//        }
+        if(mCameraId.equals("0")){
+            mCameraId = "1";
+        }else if(mCameraId.equals("1")){
+            mCameraId = "0";
+        }
+        stopPreview();
+        closeCamera();
+        //openCamera();
+        System.out.println("一意义iiiiiiiiiiiiiiiiiiiiiiiiiiiiii"+mCameraId);
+        openCamera(mTextureView.getWidth(),mTextureView.getHeight());
+        System.out.println("哈啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊"+mCameraId);
+//        Activity activity = getActivity();
+//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+//        try {
+//            for (String cameraId : manager.getCameraIdList()) {
+//                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 //                StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//                Size maxSize = getMaxSize(map.getOutputSizes(SurfaceHolder.class));
-//                if (currentCameraId == CameraCharacteristics.LENS_FACING_BACK && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
+//                Size largest = Collections.max(
+//                        Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+//                        new CompareSizesByArea());
+//                if (Integer.parseInt(mCameraId) == CameraCharacteristics.LENS_FACING_BACK && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
 //                    //前置转后置
-//                    previewSize = maxSize;
-//                    currentCameraId = CameraCharacteristics.LENS_FACING_FRONT;
-//                    cameraDevice.close();
-//                    openCamera();
+//                    System.out.println("哈哈CameraId = "+ mCameraId);
+//                    mPreviewSize = largest;
+//                    mCameraDevice.close();
+//                    mCameraId = "0";
+//                    openCamera(mTextureView.getWidth(),mTextureView.getHeight());
+//                    System.out.println("这里是后置");
+//                    System.out.println("呵呵CameraId = "+ mCameraId);
 //                    break;
-//                } else if (currentCameraId == CameraCharacteristics.LENS_FACING_FRONT && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
+//                } else if (Integer.parseInt(mCameraId)  == CameraCharacteristics.LENS_FACING_FRONT && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
 //                    //后置转前置
-//                    previewSize = maxSize;
-//                    currentCameraId = CameraCharacteristics.LENS_FACING_BACK;
-//                    cameraDevice.close();
-//                    openCamera();
+//                    mPreviewSize = largest;
+//                    System.out.println("嘻嘻CameraId = "+ mCameraId);
+//                    mCameraDevice.close();
+//                    mCameraId = "1";
+//                    openCamera(mTextureView.getWidth(),mTextureView.getHeight());
+//                    System.out.println("这里是前置");
+//                    System.out.println("嘿嘿CameraId = "+ mCameraId);
 //                    break;
 //                }
 //            }
 //        } catch (CameraAccessException e) {
 //            e.printStackTrace();
 //        }
-//    }
+    }
 
 //    public void switchCamera() {
 //        if (mCameraId.equals("1")) {
@@ -960,24 +1027,13 @@ public class Camera2BasicFragment extends Fragment
 //            reopenCamera(mCameraId);
 //        }
 //    }
-//    public void reopenCamera(String mCameraId) {
-//        if (mTextureView.isAvailable()) {
-//            Activity activity = new Activity();
-//            CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-//            try {
-//                manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
-//            } catch (CameraAccessException e) {
-//                e.printStackTrace();
-//            }
-//        } else {
-//            mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
-//        }
-//    }
+//
 
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.picture: {
+
                 takePicture();
                 break;
             }
@@ -989,7 +1045,7 @@ public class Camera2BasicFragment extends Fragment
 //                            .setPositiveButton(android.R.string.ok, null)
 //                            .show();
 //                }
-
+                switchCamera();
                 break;
 
 
