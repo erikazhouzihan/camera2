@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -45,6 +46,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -74,6 +76,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
+
+import static android.os.Environment.DIRECTORY_DCIM;
 
 public class Camera2BasicFragment extends Fragment
         implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
@@ -132,6 +137,9 @@ public class Camera2BasicFragment extends Fragment
      */
     private static final int MAX_PREVIEW_HEIGHT = 1080;
 
+
+
+    public static final String GALLERY_Path = DIRECTORY_DCIM + File.separator + "test";
     /**
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
      * {@link TextureView}.{@link TextureView.SurfaceTextureListener} 在 * {@link TextureView} 上处理多个生命周期事件。
@@ -264,6 +272,9 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
+            long cTIme = System.currentTimeMillis();
+            mFile = new File(getActivity().getExternalFilesDir(null), cTIme+".jpg");
+            Log.e(TAG, "onImageAvailable: " + mFile );
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
@@ -460,14 +471,14 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        long cTIme = System.currentTimeMillis();
+
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        date = sdf.format(System.currentTimeMillis());
-        mFile = new File(getActivity().getExternalFilesDir(null), date+".jpg");
+
     }
 
     @Override
@@ -888,8 +899,8 @@ public class Camera2BasicFragment extends Fragment
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                                @NonNull CaptureRequest request,
                                                @NonNull TotalCaptureResult result) {
-                    showToast("Saved: " + mFile);
-                    Log.d(TAG, mFile.toString());
+                    showToast("Saved: " + getActivity().getExternalFilesDir(null));
+                    //Log.d(TAG, mFile.toString());
                     unlockFocus();
                 }
             };
@@ -976,9 +987,7 @@ public class Camera2BasicFragment extends Fragment
         stopPreview();
         closeCamera();
         //openCamera();
-        System.out.println("一意义iiiiiiiiiiiiiiiiiiiiiiiiiiiiii"+mCameraId);
         openCamera(mTextureView.getWidth(),mTextureView.getHeight());
-        System.out.println("哈啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊"+mCameraId);
 //        Activity activity = getActivity();
 //        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 //        try {
