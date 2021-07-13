@@ -138,7 +138,7 @@ public class Camera2BasicFragment extends Fragment
     private static final int MAX_PREVIEW_HEIGHT = 1080;
 
 
-
+    private static int count = 0;
     public static final String GALLERY_Path = DIRECTORY_DCIM + File.separator + "test";
     /**
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
@@ -326,14 +326,23 @@ public class Camera2BasicFragment extends Fragment
             = new CameraCaptureSession.CaptureCallback() {
 
         private void process(CaptureResult result) {
+
             switch (mState) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
                     break;
                 }
+                //等待对焦锁定
                 case STATE_WAITING_LOCK: {
+                    //自动聚焦状态
+                    int b = 0;
+                    b = b + 1;
+                    System.out.println("田田田田田田田田田田田田田田田田田田田田田田田田田"+b);
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
                     if (afState == null) {
+                        int c = 0;
+                        c = c + 1;
+                        System.out.println("绘会绘画绘会绘画绘会绘画绘会绘画绘会绘画绘会绘画"+c);
                         captureStillPicture();
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                             CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
@@ -342,6 +351,9 @@ public class Camera2BasicFragment extends Fragment
                         if (aeState == null ||
                                 aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
                             mState = STATE_PICTURE_TAKEN;
+                            int d = 0;
+                            d = d + 1;
+                            System.out.println("习习习习习习习习现象学现象学现象学现象学"+d);
                             captureStillPicture();
                         } else {
                             runPrecaptureSequence();
@@ -664,6 +676,7 @@ public class Camera2BasicFragment extends Fragment
             requestCameraPermission();
             return;
         }
+
         setUpCameraOutputs(width, height);
         configureTransform(width, height);
         Activity activity = getActivity();
@@ -831,10 +844,13 @@ public class Camera2BasicFragment extends Fragment
      */
     private void takePicture() {
         lockFocus();
+
+
     }
 
     /**
      * Lock the focus as the first step for a still image capture.
+     * 锁定焦点是拍摄静止图像的第一步。
      */
     private void lockFocus() {
         try {
@@ -843,8 +859,11 @@ public class Camera2BasicFragment extends Fragment
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #mCaptureCallback to wait for the lock.
             mState = STATE_WAITING_LOCK;
+            //lockFocus主要是实现下面这个方法，并回调mCaptureCallback
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
+
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -853,9 +872,12 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Run the precapture sequence for capturing a still image. This method should be called when
      * we get a response in {@link #mCaptureCallback} from {@link #lockFocus()}.
+     * 运行预捕获序列以捕获静止图像。当
+     * 我们从 {@link #lockFocus()}在{@link #mCaptureCallback}中获得响应时，应该调用此方法。
      */
     private void runPrecaptureSequence() {
         try {
+
             // This is how to tell the camera to trigger.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
@@ -863,6 +885,7 @@ public class Camera2BasicFragment extends Fragment
             mState = STATE_WAITING_PRECAPTURE;
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -871,9 +894,11 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Capture a still picture. This method should be called when we get a response in
      * {@link #mCaptureCallback} from both {@link #lockFocus()}.
+     * 拍摄静止图像。当我们在 * {@link #mCaptureCallback} 中从 {@link #lockFocus()} 获得响应时，应该调用此方法。
      */
     private void captureStillPicture() {
         try {
+
             final Activity activity = getActivity();
             if (null == activity || null == mCameraDevice) {
                 return;
@@ -934,6 +959,7 @@ public class Camera2BasicFragment extends Fragment
     //解锁焦点。当静止图像捕获序列完成时应调用此方法。
     private void unlockFocus() {
         try {
+
             // Reset the auto-focus trigger
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
@@ -969,6 +995,7 @@ public class Camera2BasicFragment extends Fragment
         }
     }
     private void switchCamera() {
+
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 //        try {
@@ -987,6 +1014,7 @@ public class Camera2BasicFragment extends Fragment
         stopPreview();
         closeCamera();
         //openCamera();
+
         openCamera(mTextureView.getWidth(),mTextureView.getHeight());
 //        Activity activity = getActivity();
 //        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
@@ -1042,7 +1070,6 @@ public class Camera2BasicFragment extends Fragment
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.picture: {
-
                 takePicture();
                 break;
             }
