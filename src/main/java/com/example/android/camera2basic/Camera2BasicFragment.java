@@ -335,31 +335,31 @@ public class Camera2BasicFragment extends Fragment
                 //等待对焦锁定
                 case STATE_WAITING_LOCK: {
                     //自动聚焦状态
-                    int b = 0;
-                    b = b + 1;
-                    System.out.println("田田田田田田田田田田田田田田田田田田田田田田田田田"+b);
+
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
-                        int c = 0;
-                        c = c + 1;
-                        System.out.println("绘会绘画绘会绘画绘会绘画绘会绘画绘会绘画绘会绘画"+c);
-                        captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
-                            int d = 0;
-                            d = d + 1;
-                            System.out.println("习习习习习习习习现象学现象学现象学现象学"+d);
+                    if(mCameraId.equals("0")){
+                        if (afState == null) {
                             captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
+                        } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                                CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                            // CONTROL_AE_STATE can be null on some devices
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeState == null ||
+                                    aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                                mState = STATE_PICTURE_TAKEN;
+                                int d = 0;
+                                d = d + 1;
+                                System.out.println("习习习习习习习习现象学现象学现象学现象学"+d);
+                                captureStillPicture();
+                            } else {
+                                runPrecaptureSequence();
+                            }
                         }
+                        break;
+                    }else {
+                        captureStillPicture();
                     }
-                    break;
+
                 }
                 case STATE_WAITING_PRECAPTURE: {
                     // CONTROL_AE_STATE can be null on some devices
@@ -550,7 +550,6 @@ public class Camera2BasicFragment extends Fragment
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : manager.getCameraIdList()) {
-                System.out.println("哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈"+mCameraId);
                 //System.out.println("cameraId："+cameraId);
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
