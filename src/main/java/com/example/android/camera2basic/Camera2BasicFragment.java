@@ -302,9 +302,9 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            long cTIme = System.currentTimeMillis();
-            mFile = new File(getActivity().getExternalFilesDir(null), cTIme+".jpg");
-            //mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+File.separator+"Camera","123.jpg");
+//            long cTIme = System.currentTimeMillis();
+//            mFile = new File(getActivity().getExternalFilesDir(null), cTIme+".jpg");
+            mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+File.separator+"Camera","123.jpg");
             Log.e(TAG, "onImageAvailable: " + mFile );
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
