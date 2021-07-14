@@ -28,6 +28,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -78,6 +79,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
+
 import static android.os.Environment.DIRECTORY_DCIM;
 
 public class Camera2BasicFragment extends Fragment
@@ -89,13 +91,41 @@ public class Camera2BasicFragment extends Fragment
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
+    //设置两套角度，用于前置和后置摄像头拍照
+    private void Orientations() {
+        //前置时，照片竖直显示
+        if(mCameraId.equals("1")){
+            ORIENTATIONS.append(Surface.ROTATION_0, 270);
+            ORIENTATIONS.append(Surface.ROTATION_90, 0);
+            ORIENTATIONS.append(Surface.ROTATION_180, 90);
+            ORIENTATIONS.append(Surface.ROTATION_270, 180);
+//            ORIENTATIONS.append(Surface.ROTATION_0, 270);
+//            ORIENTATIONS.append(Surface.ROTATION_90, 0);
+//            ORIENTATIONS.append(Surface.ROTATION_180, 90);
+//            ORIENTATIONS.append(Surface.ROTATION_270, 180);
+        }else {
+            ORIENTATIONS.append(Surface.ROTATION_0, 90);
+            ORIENTATIONS.append(Surface.ROTATION_90, 0);
+            ORIENTATIONS.append(Surface.ROTATION_180, 270);
+            ORIENTATIONS.append(Surface.ROTATION_270, 180);
+        }
 
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
+
+//    private void rear() {
+//        //后置时，照片竖直显示
+//        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+//        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+//        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+//        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+//    }
+
+//    static {
+//        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+//        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+//        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+//        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+//    }
 
     /**
      * Tag for the {@link Log}.{@link } 的标签。
@@ -274,6 +304,7 @@ public class Camera2BasicFragment extends Fragment
         public void onImageAvailable(ImageReader reader) {
             long cTIme = System.currentTimeMillis();
             mFile = new File(getActivity().getExternalFilesDir(null), cTIme+".jpg");
+            //mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+File.separator+"Camera","123.jpg");
             Log.e(TAG, "onImageAvailable: " + mFile );
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
@@ -337,7 +368,7 @@ public class Camera2BasicFragment extends Fragment
                     //自动聚焦状态
 
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if(mCameraId.equals("0")){
+                    if(mCameraId.equals("0") || mCameraId.equals("2")){
                         if (afState == null) {
                             captureStillPicture();
                         } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
@@ -349,7 +380,6 @@ public class Camera2BasicFragment extends Fragment
                                 mState = STATE_PICTURE_TAKEN;
                                 int d = 0;
                                 d = d + 1;
-                                System.out.println("习习习习习习习习现象学现象学现象学现象学"+d);
                                 captureStillPicture();
                             } else {
                                 runPrecaptureSequence();
@@ -915,7 +945,6 @@ public class Camera2BasicFragment extends Fragment
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
-
             CameraCaptureSession.CaptureCallback CaptureCallback
                     = new CameraCaptureSession.CaptureCallback() {
 
@@ -944,6 +973,7 @@ public class Camera2BasicFragment extends Fragment
      * @return The JPEG orientation (one of 0, 90, 270, and 360)
      */
     private int getOrientation(int rotation) {
+        Orientations();
         // Sensor orientation is 90 for most devices, or 270 for some devices (eg. Nexus 5X)
         // We have to take that into account and rotate JPEG properly.
         // For devices with orientation of 90, we simply return our mapping from ORIENTATIONS.
@@ -1015,55 +1045,10 @@ public class Camera2BasicFragment extends Fragment
         //openCamera();
 
         openCamera(mTextureView.getWidth(),mTextureView.getHeight());
-//        Activity activity = getActivity();
-//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-//        try {
-//            for (String cameraId : manager.getCameraIdList()) {
-//                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-//                StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//                Size largest = Collections.max(
-//                        Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-//                        new CompareSizesByArea());
-//                if (Integer.parseInt(mCameraId) == CameraCharacteristics.LENS_FACING_BACK && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) {
-//                    //前置转后置
-//                    System.out.println("哈哈CameraId = "+ mCameraId);
-//                    mPreviewSize = largest;
-//                    mCameraDevice.close();
-//                    mCameraId = "0";
-//                    openCamera(mTextureView.getWidth(),mTextureView.getHeight());
-//                    System.out.println("这里是后置");
-//                    System.out.println("呵呵CameraId = "+ mCameraId);
-//                    break;
-//                } else if (Integer.parseInt(mCameraId)  == CameraCharacteristics.LENS_FACING_FRONT && characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK) {
-//                    //后置转前置
-//                    mPreviewSize = largest;
-//                    System.out.println("嘻嘻CameraId = "+ mCameraId);
-//                    mCameraDevice.close();
-//                    mCameraId = "1";
-//                    openCamera(mTextureView.getWidth(),mTextureView.getHeight());
-//                    System.out.println("这里是前置");
-//                    System.out.println("嘿嘿CameraId = "+ mCameraId);
-//                    break;
-//                }
-//            }
-//        } catch (CameraAccessException e) {
-//            e.printStackTrace();
-//        }
+
     }
 
-//    public void switchCamera() {
-//        if (mCameraId.equals("1")) {
-//            mCameraId = "0";
-//            closeCamera();
-//            reopenCamera(mCameraId);
-//
-//        } else if (mCameraId.equals("0")) {
-//            mCameraId = "1";
-//            closeCamera();
-//            reopenCamera(mCameraId);
-//        }
-//    }
-//
+
 
     @Override
     public void onClick(View view) {
@@ -1093,12 +1078,13 @@ public class Camera2BasicFragment extends Fragment
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
         }
+
     }
 
     /**
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
-    private static class ImageSaver implements Runnable {
+    private  class ImageSaver implements Runnable {
 
         /**
          * The JPEG image
@@ -1119,6 +1105,14 @@ public class Camera2BasicFragment extends Fragment
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+            //前置时左右翻转时处理，后置是正常的，不需要处理了
+            if (mCameraId.equals("1")){
+                Matrix m = new Matrix();
+                m.postScale(-1, 1); // 镜像水平翻转
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+            }
+            //ivImage.setImageBitmap(bitmap);
             FileOutputStream output = null;
             try {
                 output = new FileOutputStream(mFile);
