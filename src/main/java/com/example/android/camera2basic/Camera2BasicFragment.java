@@ -25,6 +25,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -46,10 +47,13 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
@@ -82,6 +86,7 @@ import java.util.UUID;
 
 import static android.os.Environment.DIRECTORY_DCIM;
 
+
 public class Camera2BasicFragment extends Fragment
         implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -91,6 +96,8 @@ public class Camera2BasicFragment extends Fragment
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
+    private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA,Manifest.permission.RECORD_AUDIO,Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    private static final int VIDEO_PERMISSIONS_CODE = 1;
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -99,10 +106,7 @@ public class Camera2BasicFragment extends Fragment
             ORIENTATIONS.append(Surface.ROTATION_90, 0);
             ORIENTATIONS.append(Surface.ROTATION_180, 90);
             ORIENTATIONS.append(Surface.ROTATION_270, 180);
-//            ORIENTATIONS.append(Surface.ROTATION_0, 270);
-//            ORIENTATIONS.append(Surface.ROTATION_90, 0);
-//            ORIENTATIONS.append(Surface.ROTATION_180, 90);
-//            ORIENTATIONS.append(Surface.ROTATION_270, 180);
+           ORIENTATIONS.append(Surface.ROTATION_270, 180);
         }else {
             ORIENTATIONS.append(Surface.ROTATION_0, 90);
             ORIENTATIONS.append(Surface.ROTATION_90, 0);
@@ -112,20 +116,6 @@ public class Camera2BasicFragment extends Fragment
 
     }
 
-//    private void rear() {
-//        //后置时，照片竖直显示
-//        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-//        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-//        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-//        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-//    }
-
-//    static {
-//        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-//        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-//        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-//        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-//    }
 
     /**
      * Tag for the {@link Log}.{@link } 的标签。
@@ -292,6 +282,7 @@ public class Camera2BasicFragment extends Fragment
     //这是我们图片的输出文件。
     private File mFile;
 
+
     /**
      * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
      * still image is ready to be saved.
@@ -302,11 +293,12 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-//            long cTIme = System.currentTimeMillis();
-//            mFile = new File(getActivity().getExternalFilesDir(null), cTIme+".jpg");
-            mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+File.separator+"Camera","123.jpg");
+            long cTIme = System.currentTimeMillis();
+            mFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+File.separator+"Camera",cTIme+".jpg");
             Log.e(TAG, "onImageAvailable: " + mFile );
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+
+
         }
 
     };
@@ -505,6 +497,7 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        requestPermission();
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
@@ -555,18 +548,18 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                ErrorDialog.newInstance(getString(R.string.request_permission))
-                        .show(getChildFragmentManager(), FRAGMENT_DIALOG);
-            }
-        } else {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+//                                           @NonNull int[] grantResults) {
+//        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+//            if (grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+//                ErrorDialog.newInstance(getString(R.string.request_permission))
+//                        .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+//            }
+//        } else {
+//            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        }
+//    }
 
     /**
      * Sets up member variables related to camera.设置与相机相关的成员变量。
@@ -1112,6 +1105,12 @@ public class Camera2BasicFragment extends Fragment
                 m.postScale(-1, 1); // 镜像水平翻转
                 bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
             }
+            //拍完照片并存储到系统相册目录下后，让系统相册更新。
+            Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            Uri uri = Uri.fromFile(mFile);
+            intent.setData(uri);
+            getContext().sendBroadcast(intent);
+
             //ivImage.setImageBitmap(bitmap);
             FileOutputStream output = null;
             try {
@@ -1210,6 +1209,67 @@ public class Camera2BasicFragment extends Fragment
                     .create();
         }
     }
+    private void requestPermission() {
+        // 当API大于 23 时，才动态申请权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.requestPermissions(getActivity(),VIDEO_PERMISSIONS,VIDEO_PERMISSIONS_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case VIDEO_PERMISSIONS_CODE:
+                //权限请求失败
+                if (grantResults.length == VIDEO_PERMISSIONS.length) {
+                    for (int result : grantResults) {
+                        if (result != PackageManager.PERMISSION_GRANTED) {
+                            //弹出对话框引导用户去设置
+                            showDialog();
+                            Toast.makeText(getActivity(), "请求权限被拒绝", Toast.LENGTH_LONG).show();
+                            break;
+                        }
+                    }
+                }else{
+                    Toast.makeText(getActivity(), "已授权", Toast.LENGTH_LONG).show();
+                }
+                break;
+        }
+    }
+
+    //弹出提示框
+    private void showDialog(){
+        AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setMessage("录像需要相机、录音和读写权限，是否去设置？")
+                .setPositiveButton("是", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        goToAppSetting();
+                    }
+                })
+                .setNegativeButton("否", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    // 跳转到当前应用的设置界面
+    private void goToAppSetting(){
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", getActivity().getPackageName(), null);
+        intent.setData(uri);
+        startActivity(intent);
+    }
 
 
 }
+
+
+
