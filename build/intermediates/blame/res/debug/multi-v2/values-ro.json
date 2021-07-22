@@ -4,17 +4,7 @@
             "outputFile": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/incremental/mergeDebugResources/merged.dir/values-ro/values-ro.xml",
             "map": [
                 {
-                    "source": "/home/zzh/.gradle/caches/transforms-1/files-1.1/appcompat-v7-27.0.2.aar/57fa9d9106530f9c9527285bcae95cdf/res/values-ro/values-ro.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,226,330,443,531,643,764,849,930,1013,1125,1238,1338,1452,1557,1663,1827,1930",
-                        "endColumns": "120,103,112,87,111,120,84,80,82,111,112,99,113,104,105,163,102,82",
-                        "endOffsets": "221,325,438,526,638,759,844,925,1008,1120,1233,1333,1447,1552,1658,1822,1925,2008"
-                    }
-                },
-                {
-                    "source": "/home/zzh/.gradle/caches/transforms-1/files-1.1/support-compat-27.0.2.aar/487855174e23e996b59fa4d808611b31/res/values-ro/values-ro.xml",
+                    "source": "/home/zzh/.gradle/caches/transforms-2/files-2.1/b10d974ba8b444faf866fc4a658ef006/support-compat-27.0.2/res/values-ro/values-ro.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -28,6 +18,16 @@
                         "startOffsets": "2013",
                         "endColumns": "100",
                         "endOffsets": "2109"
+                    }
+                },
+                {
+                    "source": "/home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/res/values-ro/values-ro.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,226,330,443,531,643,764,849,930,1013,1125,1238,1338,1452,1557,1663,1827,1930",
+                        "endColumns": "120,103,112,87,111,120,84,80,82,111,112,99,113,104,105,163,102,82",
+                        "endOffsets": "221,325,438,526,638,759,844,925,1008,1120,1233,1333,1447,1552,1658,1822,1925,2008"
                     }
                 }
             ]

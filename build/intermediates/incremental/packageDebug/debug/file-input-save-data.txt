@@ -1,7 +1,0 @@
-#Internal package file, do not edit.
-#Sat Jul 03 10:39:20 CST 2021
-0.baseType=DIRECTORY
-0.base=/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/transforms/dexMerger/debug/0
-0.path=classes.dex
-0.set=DEX
-count=1

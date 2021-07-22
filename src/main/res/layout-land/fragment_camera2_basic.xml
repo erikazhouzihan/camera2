@@ -52,7 +52,15 @@
             android:contentDescription="@string/description_info"
             android:padding="20dp"
             android:src="@drawable/ic_action_info" />
-
+        <ImageButton
+            android:id="@+id/switchbutton"
+            android:contentDescription="@string/description_switch"
+            style="@android:style/Widget.Material.Light.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|left"
+            android:padding="20dp"
+            android:src="@drawable/ic_action_info" />
 
     </FrameLayout>
 
