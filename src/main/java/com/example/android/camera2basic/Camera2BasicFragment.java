@@ -506,9 +506,10 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
+        CameraActivity cameraActivity = new CameraActivity();
         view.findViewById(R.id.picture).setOnClickListener(this);
-        view.findViewById(R.id.info).setOnClickListener(this);
-        view.findViewById(R.id.switchbutton).setOnClickListener(this);
+        view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
+//        view.findViewById(R.id.switchbutton).setOnClickListener(cameraActivity().ImageButtonListener());
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         long cTIme = System.currentTimeMillis();
 
@@ -1063,7 +1064,7 @@ public class Camera2BasicFragment extends Fragment
                 takePicture();
                 break;
             }
-            case R.id.info: {
+            case R.id.exchangeCamera2: {
                 Activity activity = getActivity();
 
                 switchCamera();

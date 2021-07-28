@@ -25,7 +25,15 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"></LinearLayout>
-
+    <ImageButton
+        android:id="@+id/switchbutton"
+        android:contentDescription="@string/description_switch"
+        style="@android:style/Widget.Material.Light.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|top"
+        android:padding="20dp"
+        android:src="@drawable/ic_action_info" />
 <!--    <Button-->
 <!--        android:id="@+id/button"-->
 <!--        android:layout_width="0dp"-->

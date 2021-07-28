@@ -5,6 +5,7 @@ MERGED from [com.android.support:support-v13:27.0.2] /home/zzh/.gradle/caches/tr
 MERGED from [com.android.support:support-v4:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/837d37ed317b9dade88e848b207abb6d/support-v4-27.0.2/AndroidManifest.xml:17:1-22:12
 MERGED from [com.android.support:cardview-v7:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f44d97c18a23250009a37378dded324f/cardview-v7-27.0.2/AndroidManifest.xml:17:1-22:12
 MERGED from [com.android.support:appcompat-v7:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.constraintlayout:constraintlayout:1.1.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/a5abd0698ed34f92b326a3058b863940/constraintlayout-1.1.2/AndroidManifest.xml:2:1-11:12
 MERGED from [com.android.support:support-media-compat:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f6991f10ae5ddcec02bf65d7d29eb785/support-media-compat-27.0.2/AndroidManifest.xml:17:1-22:12
 MERGED from [com.android.support:support-fragment:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f3ab528f82c1c1ec4b0a54f9bee567ea/support-fragment-27.0.2/AndroidManifest.xml:17:1-22:12
 MERGED from [com.android.support:support-core-utils:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/fda5b9117db595323eba2bcdbe8eabe1/support-core-utils-27.0.2/AndroidManifest.xml:17:1-22:12
@@ -43,6 +44,8 @@ ADDED from /home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Appl
 		ADDED from /home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:27:19-67
 application
 ADDED from /home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:29:5-41:19
+MERGED from [androidx.constraintlayout:constraintlayout:1.1.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/a5abd0698ed34f92b326a3058b863940/constraintlayout-1.1.2/AndroidManifest.xml:9:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:1.1.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/a5abd0698ed34f92b326a3058b863940/constraintlayout-1.1.2/AndroidManifest.xml:9:5-20
 	android:label
 		ADDED from /home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:30:9-41
 	android:icon
@@ -79,6 +82,8 @@ MERGED from [com.android.support:cardview-v7:27.0.2] /home/zzh/.gradle/caches/tr
 MERGED from [com.android.support:cardview-v7:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f44d97c18a23250009a37378dded324f/cardview-v7-27.0.2/AndroidManifest.xml:20:5-44
 MERGED from [com.android.support:appcompat-v7:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/AndroidManifest.xml:20:5-44
 MERGED from [com.android.support:appcompat-v7:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/AndroidManifest.xml:20:5-44
+MERGED from [androidx.constraintlayout:constraintlayout:1.1.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/a5abd0698ed34f92b326a3058b863940/constraintlayout-1.1.2/AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.constraintlayout:constraintlayout:1.1.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/a5abd0698ed34f92b326a3058b863940/constraintlayout-1.1.2/AndroidManifest.xml:5:5-7:41
 MERGED from [com.android.support:support-media-compat:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f6991f10ae5ddcec02bf65d7d29eb785/support-media-compat-27.0.2/AndroidManifest.xml:20:5-44
 MERGED from [com.android.support:support-media-compat:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f6991f10ae5ddcec02bf65d7d29eb785/support-media-compat-27.0.2/AndroidManifest.xml:20:5-44
 MERGED from [com.android.support:support-fragment:27.0.2] /home/zzh/.gradle/caches/transforms-2/files-2.1/f3ab528f82c1c1ec4b0a54f9bee567ea/support-fragment-27.0.2/AndroidManifest.xml:20:5-44
