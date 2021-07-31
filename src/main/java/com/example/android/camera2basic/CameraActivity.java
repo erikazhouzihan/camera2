@@ -32,11 +32,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.Toast;
-import android.view.View;
 
 
 public class CameraActivity extends AppCompatActivity {
@@ -57,34 +53,40 @@ public class CameraActivity extends AppCompatActivity {
 //        button.setOnClickListener((View.OnClickListener) this);
         fm = getSupportFragmentManager();
         ft = fm.beginTransaction();
-
+        Log.i(TAG, "fm===================: " + fm);
         Camera2BasicFragment camera2BasicFragment = Camera2BasicFragment.newInstance();
         Camera2VideoFragment camera2VideoFragment = Camera2VideoFragment.newInstance();
         if (null == savedInstanceState) {
             Log.i(TAG, "onRequestPermissionsResult: 添加Fragment");
 
-//            ft.add(R.id.container, camera2BasicFragment, "camera_fragment")
-//                    .add(R.id.container, camera2VideoFragment, "recorder_fragment").hide(camera2VideoFragment)
-//                    .commit();
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, Camera2BasicFragment.newInstance())
+            ft.add(R.id.container, camera2BasicFragment, "Camera2BasicFragment")
+                    .add(R.id.container, camera2VideoFragment, "Camera2VideoFragment").hide(camera2VideoFragment)
                     .commit();
+//            getSupportFragmentManager().beginTransaction()
+//                    .replace(R.id.container, Camera2BasicFragment.newInstance())
+//                    .commit();
         }
     }
+
     public void switchFragment(String fromTag, String toTag) {
+        fm = getSupportFragmentManager();
+//        fm.executePendingTransactions();
         Fragment from = fm.findFragmentByTag(fromTag);
         Fragment to = fm.findFragmentByTag(toTag);
+        System.out.println("mmmmmmmmmmmmm"+mCurrentFragment + "\nssssssssssss = " + to + "\fm ======= " + fm);
         if (mCurrentFragment != to) {
             mCurrentFragment = to;
             FragmentTransaction transaction = fm.beginTransaction();
             if (!to.isAdded()) {//判断是否被添加到了Activity里面去了
+                Log.i(TAG, "switchFragment: 11111111111");
                 transaction.hide(from).add(R.id.container,to).commit();
             } else {
+                Log.i(TAG, "switchFragment: 222222222222");
                 transaction.hide(from).show(to).commit();
             }
         }
     }
-        //定义模式切换按钮
+    //定义模式切换按钮
 //        ImageButton switchbutton = (ImageButton)findViewById(R.id.switchbutton);
 //        switchbutton.setOnClickListener(new ImageButtonListener());
 //    }

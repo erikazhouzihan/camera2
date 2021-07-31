@@ -75,7 +75,7 @@ public class Camera2VideoFragment extends Fragment
     //反转方向
     private static final SparseIntArray INVERSE_ORIENTATIONS = new SparseIntArray();
 
-    private static final String TAG = "Camera2VideoFragment";
+    public static final String TAG = "Camera2VideoFragment";
     //请求视频权限
     private static final int REQUEST_VIDEO_PERMISSIONS = 1;
     //片段对话框
@@ -290,7 +290,7 @@ public class Camera2VideoFragment extends Fragment
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mButtonVideo = (Button) view.findViewById(R.id.video);
         mButtonVideo.setOnClickListener(this);
-        view.findViewById(R.id.info).setOnClickListener(this);
+//        view.findViewById(R.id.info).setOnClickListener(this);
     }
 
     @Override

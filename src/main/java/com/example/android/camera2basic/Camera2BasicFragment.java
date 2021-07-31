@@ -16,9 +16,6 @@
 
 package com.example.android.camera2basic;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -59,8 +56,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
@@ -76,16 +71,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.UUID;
-
 
 import static android.os.Environment.DIRECTORY_DCIM;
 
@@ -101,6 +92,8 @@ public class Camera2BasicFragment extends Fragment
     private static final String FRAGMENT_DIALOG = "dialog";
     private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
+    private boolean isFirstStart = true;
+    private Activity activity;
 
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
@@ -123,7 +116,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Tag for the {@link Log}.{@link } 的标签。
      */
-    private static final String TAG = "Camera2BasicFragment";
+    public static final String TAG = "Camera2BasicFragment";
 
     /**
      * Camera state: Showing camera preview.相机状态：显示相机预览。
@@ -504,11 +497,13 @@ public class Camera2BasicFragment extends Fragment
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
+    CameraActivity cameraActivity;
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        CameraActivity cameraActivity = new CameraActivity();
+        cameraActivity = new CameraActivity();
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
+        view.findViewById(R.id.to_recorder).setOnClickListener(this);
 //        view.findViewById(R.id.switchbutton).setOnClickListener(cameraActivity().ImageButtonListener());
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         long cTIme = System.currentTimeMillis();
@@ -1005,7 +1000,7 @@ public class Camera2BasicFragment extends Fragment
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
             setAutoFlash(mPreviewRequestBuilder);
-            Log.e(TAG, "run---------> 1");
+            Log.e( TAG, "run---------> 1");
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
             // After this, the camera will go back to the normal state of preview.
@@ -1066,24 +1061,28 @@ public class Camera2BasicFragment extends Fragment
             }
             case R.id.exchangeCamera2: {
                 Activity activity = getActivity();
-
                 switchCamera();
                 break;
             }
-//            case R.id.switchbutton:{
+            case R.id.to_recorder: {
+                isFirstStart = false;
+                cameraActivity.switchFragment("Camera2BasicFragment","Camera2VideoFragment");
+                break;
+            }
+//            case R.id.to_recorder:{
 //                stopPreview();
 //                closeCamera();
 //                //获取fragment的实例
 //                Camera2VideoFragment fragment_Vedio=new Camera2VideoFragment();
 //                //获取Fragment的管理器
-//                FragmentManager fragmentManager=getFragmentManager();
-                //开启fragment的事物,在这个对象里进行fragment的增删替换等操作。
+//                FragmentManager fragmentManager=getChildFragmentManager();
+//                //开启fragment的事物,在这个对象里进行fragment的增删替换等操作。
 //                FragmentTransaction ft=fragmentManager.beginTransaction();
 //                //跳转到fragment，第一个参数为所要替换的位置id，第二个参数是替换后的fragment
 //                ft.replace(R.layout.fragment_camera2_video,fragment_Vedio);
 //                //提交事物
 //                ft.commit();
-
+//
 //
 //            }
         }
