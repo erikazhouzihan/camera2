@@ -23,6 +23,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
@@ -35,11 +36,15 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.app.ActivityCompat;
@@ -53,7 +58,9 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.Toast;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,11 +82,16 @@ public class Camera2VideoFragment extends Fragment
     //反转方向
     private static final SparseIntArray INVERSE_ORIENTATIONS = new SparseIntArray();
 
-    public static final String TAG = "Camera2VideoFragment";
+    public static final String TAG = "camera2VideoFragment";
     //请求视频权限
     private static final int REQUEST_VIDEO_PERMISSIONS = 1;
     //片段对话框
     private static final String FRAGMENT_DIALOG = "dialog";
+    //定义计时器
+    private Chronometer timer;
+    public File mFile;
+    private boolean isFirstStart = true;
+    private Activity activity;
     //视频权限
     private static final String[] VIDEO_PERMISSIONS = {
             Manifest.permission.CAMERA,
@@ -286,10 +298,20 @@ public class Camera2VideoFragment extends Fragment
     }
 
     @Override
+    public void onAttach(Context context) {
+        Log.i(TAG, "onAttach: ");
+        super.onAttach(context);
+        this.activity = (Activity) context;
+    }
+
+    @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mButtonVideo = (Button) view.findViewById(R.id.video);
+        mTextureView = (AutoFitTextureView) view.findViewById(R.id.videoView);
+        mButtonVideo = (Button) view.findViewById(R.id.btn_video);
         mButtonVideo.setOnClickListener(this);
+        view.findViewById(R.id.to_take_photo).setOnClickListener(this);
+        timer = view.findViewById(R.id.timer);
+
 //        view.findViewById(R.id.info).setOnClickListener(this);
     }
 
@@ -299,6 +321,7 @@ public class Camera2VideoFragment extends Fragment
         super.onResume();
         startBackgroundThread();
         if (mTextureView.isAvailable()) {
+
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -315,10 +338,16 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.video: {
+            case R.id.btn_video: {
                 if (mIsRecordingVideo) {
+                    mButtonVideo.setText("开始录制");
+                    timer.setBase(SystemClock.elapsedRealtime());//计时器清零
+                    timer.stop();
                     stopRecordingVideo();
                 } else {
+                    mButtonVideo.setText("停止录制");
+                    timer.setBase(SystemClock.elapsedRealtime());//计时器清零
+                    timer.start();
                     startRecordingVideo();
                 }
                 break;
@@ -333,6 +362,12 @@ public class Camera2VideoFragment extends Fragment
                 }
                 break;
             }
+            case R.id.to_take_photo: {
+                isFirstStart = false;
+                ((CameraActivity) activity).switchFragment("Camera2VideoFragment", "Camera2BasicFragment");
+                break;
+            }
+
         }
     }
 
@@ -406,7 +441,6 @@ public class Camera2VideoFragment extends Fragment
 //            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 //        }
 //    }
-
     private boolean hasPermissionsGranted(String[] permissions) {
         for (String permission : permissions) {
             if (ActivityCompat.checkSelfPermission(getActivity(), permission)
@@ -541,7 +575,14 @@ public class Camera2VideoFragment extends Fragment
             setUpCaptureRequestBuilder(mPreviewBuilder);
             HandlerThread thread = new HandlerThread("CameraPreview");
             thread.start();
-            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
+            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                    super.onCaptureCompleted(session, request, result);
+
+                    Log.e(TAG, "onCaptureCompleted: 22222" );
+                }
+            }, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -599,6 +640,10 @@ public class Camera2VideoFragment extends Fragment
         }
         //
         mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
+        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        Uri uri = Uri.fromFile(mFile);
+        intent.setData(uri);
+        getContext().sendBroadcast(intent);
         //视频编码比特率
         mMediaRecorder.setVideoEncodingBitRate(10000000);
         //每秒30帧
@@ -619,9 +664,9 @@ public class Camera2VideoFragment extends Fragment
     }
 
     private String getVideoFilePath(Context context) {
-        final File dir = context.getExternalFilesDir(null);
-        return (dir == null ? "" : (dir.getAbsolutePath() + "/"))
-                + System.currentTimeMillis() + ".mp4";
+        final File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + File.separator + "Camera", System.currentTimeMillis() + ".mp4");
+        mFile = dir;
+        return dir.getAbsolutePath();
     }
 
     private void startRecordingVideo() {
@@ -692,14 +737,14 @@ public class Camera2VideoFragment extends Fragment
     private void stopRecordingVideo() {
         // UI
         mIsRecordingVideo = false;
-        mButtonVideo.setText(R.string.record);
+        mButtonVideo.setText("开始录制");
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();
 
         Activity activity = getActivity();
         if (null != activity) {
-            Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
+            Toast.makeText(activity, "已存入系统相册",
                     Toast.LENGTH_SHORT).show();
             Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
         }

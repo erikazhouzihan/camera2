@@ -37,10 +37,10 @@ import android.widget.Toast;
 
 public class CameraActivity extends AppCompatActivity {
     //定义两个fragment
-    FragmentManager fm;
+    FragmentManager fm ;
     FragmentTransaction ft;
     Fragment mCurrentFragment;
-    private static final String TAG = "Camera2Activity";
+    private static final String TAG = "camera2Activity";
 
     private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
@@ -51,9 +51,11 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
 //        button = (Button) findViewById(R.id.button);
 //        button.setOnClickListener((View.OnClickListener) this);
+//        fm = getSupportFragmentManager();
+
         fm = getSupportFragmentManager();
+        Log.i(TAG, "fm=================_1" + getSupportFragmentManager());
         ft = fm.beginTransaction();
-        Log.i(TAG, "fm===================: " + fm);
         Camera2BasicFragment camera2BasicFragment = Camera2BasicFragment.newInstance();
         Camera2VideoFragment camera2VideoFragment = Camera2VideoFragment.newInstance();
         if (null == savedInstanceState) {
@@ -62,6 +64,7 @@ public class CameraActivity extends AppCompatActivity {
             ft.add(R.id.container, camera2BasicFragment, "Camera2BasicFragment")
                     .add(R.id.container, camera2VideoFragment, "Camera2VideoFragment").hide(camera2VideoFragment)
                     .commit();
+
 //            getSupportFragmentManager().beginTransaction()
 //                    .replace(R.id.container, Camera2BasicFragment.newInstance())
 //                    .commit();
@@ -69,11 +72,13 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     public void switchFragment(String fromTag, String toTag) {
-        fm = getSupportFragmentManager();
+
+        System.out.println("fm=================_2"+ fm);
 //        fm.executePendingTransactions();
+//        String currentFragmentTag = fm.getBackStackEntryAt(fm.getBackStackEntryCount()-1).getName();
+//        System.out.println("currentFragmentTag============="+fm.getBackStackEntryAt(fm.getBackStackEntryCount()-1).getName() );
         Fragment from = fm.findFragmentByTag(fromTag);
         Fragment to = fm.findFragmentByTag(toTag);
-        System.out.println("mmmmmmmmmmmmm"+mCurrentFragment + "\nssssssssssss = " + to + "\fm ======= " + fm);
         if (mCurrentFragment != to) {
             mCurrentFragment = to;
             FragmentTransaction transaction = fm.beginTransaction();
@@ -81,7 +86,7 @@ public class CameraActivity extends AppCompatActivity {
                 Log.i(TAG, "switchFragment: 11111111111");
                 transaction.hide(from).add(R.id.container,to).commit();
             } else {
-                Log.i(TAG, "switchFragment: 222222222222");
+                Log.i(TAG, "switchFragment: from = " + from + "\n to = " + to);
                 transaction.hide(from).show(to).commit();
             }
         }
@@ -203,4 +208,5 @@ public class CameraActivity extends AppCompatActivity {
         intent.setData(uri);
         startActivity(intent);
     }
+
 }

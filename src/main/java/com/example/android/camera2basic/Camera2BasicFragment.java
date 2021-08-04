@@ -26,8 +26,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -48,6 +46,7 @@ import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -65,6 +64,9 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -93,8 +95,17 @@ public class Camera2BasicFragment extends Fragment
     private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
     private boolean isFirstStart = true;
-    private Activity activity;
-
+    public Activity activity;
+    private boolean isDelay = false;
+    private Button delayBtn;
+    private int delaystate = 0;
+    private LinearLayout btn_delay_layout;
+    private Button btn_delay_setting;
+    private short mDelayTime;
+    private short mDelayState = 0;
+    public static final int TIME_INTERVAL = 1000;
+    private TextView mTimeText;
+    private TextView numText;
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -116,7 +127,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Tag for the {@link Log}.{@link } 的标签。
      */
-    public static final String TAG = "Camera2BasicFragment";
+    public static final String TAG = "camera2BasicFragment";
 
     /**
      * Camera state: Showing camera preview.相机状态：显示相机预览。
@@ -412,6 +423,8 @@ public class Camera2BasicFragment extends Fragment
         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
+
+//            Log.e(TAG, "onCaptureCompleted: 11111" );
             process(result);
         }
 
@@ -491,20 +504,41 @@ public class Camera2BasicFragment extends Fragment
     }
 
     @Override
+    public void onAttach(Context context) {
+        System.out.println("onAttach方法调用了====================");
+        super.onAttach(context);
+        this.activity = (Activity) context;
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         requestPermission();
+        System.out.println("onCreateView方法调用了====================");
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
-    CameraActivity cameraActivity;
+//    CameraActivity cameraActivity;
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        cameraActivity = new CameraActivity();
+//        cameraActivity = new CameraActivity();
+        System.out.println("onViewCreated方法调用了====================");
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
         view.findViewById(R.id.to_recorder).setOnClickListener(this);
-//        view.findViewById(R.id.switchbutton).setOnClickListener(cameraActivity().ImageButtonListener());
+        btn_delay_setting = view.findViewById(R.id.btn_delay_setting);
+        btn_delay_setting.setOnClickListener(this);
+        mTimeText = (TextView) view.findViewById(R.id.timer_text);
+//        numText = view.findViewById(R.id.txt_num);
+        view.findViewById(R.id.btn_delay3).setOnClickListener(this);
+        view.findViewById(R.id.btn_delay5).setOnClickListener(this);
+        view.findViewById(R.id.btn_delay10).setOnClickListener(this);
+        btn_delay_layout = view.findViewById(R.id.btn_delay_layout);
+        delayBtn = view.findViewById(R.id.btn_delay);
+        isDelay = (delaystate == 1);
+        if (isDelay)
+            delayBtn.setBackground(getContext().getResources().getDrawable(R.drawable.is_selected));//查询是否开启延迟拍照
+        delayBtn.setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         long cTIme = System.currentTimeMillis();
 
@@ -512,6 +546,7 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
+        System.out.println("onActivityCreated方法调用了====================");
         super.onActivityCreated(savedInstanceState);
 
     }
@@ -519,8 +554,9 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onResume() {
         super.onResume();
+        System.out.println("onResume方法调用了====================");
         startBackgroundThread();
-
+        closeCamera();
         // When the screen is turned off and turned back on, the SurfaceTexture is already
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
@@ -535,6 +571,7 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onPause() {
+        System.out.println("onPause方法调用了====================");
         stopBackgroundThread();
         closeCamera();
         super.onPause();
@@ -693,6 +730,7 @@ public class Camera2BasicFragment extends Fragment
      */
     //打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机
     private void openCamera(int width, int height) {
+        System.out.println("opneCamera方法调用了====================");
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission();
@@ -720,6 +758,7 @@ public class Camera2BasicFragment extends Fragment
      * Closes the current {@link CameraDevice}.
      */
     private void closeCamera() {
+        System.out.println("closeCamera方法调用了====================");
         try {
             mCameraOpenCloseLock.acquire();
             if (null != mCameraDevice) {
@@ -740,6 +779,7 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        System.out.println("onDestroyView方法调用了====================");
         if (null != mCameraDevice) {
             mCameraDevice.close();
             mCameraDevice = null;
@@ -876,7 +916,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Initiate a still image capture.
      */
-    private void takePicture() {
+    public void takePicture() {
         lockFocus();
 
 
@@ -1056,7 +1096,29 @@ public class Camera2BasicFragment extends Fragment
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.picture: {
-                takePicture();
+                if(delaystate == 0){
+                    takePicture();
+                }else{
+
+                        new CountDownTimer(mDelayTime, TIME_INTERVAL) {
+                            @Override
+                            public void onTick(long millisUntilFinished) {
+                                mTimeText.setVisibility(View.VISIBLE);
+                                mTimeText.setText("" + (millisUntilFinished +1000)/ TIME_INTERVAL);
+//                                int i = mDelayTime/TIME_INTERVAL;
+//                                System.out.println("i++++++++++++++++"+i);
+
+//                                numText.setText("i");
+                            }
+
+                            @Override
+                            public void onFinish() {
+                                mTimeText.setVisibility(View.GONE);
+                                takePicture();
+                            }
+                        }.start();
+
+                }
                 break;
             }
             case R.id.exchangeCamera2: {
@@ -1066,9 +1128,24 @@ public class Camera2BasicFragment extends Fragment
             }
             case R.id.to_recorder: {
                 isFirstStart = false;
-                cameraActivity.switchFragment("Camera2BasicFragment","Camera2VideoFragment");
+                ((CameraActivity)activity).switchFragment("Camera2BasicFragment","Camera2VideoFragment");
                 break;
             }
+            case R.id.btn_delay:
+                if (isDelay){
+                    isDelay = false;
+                    delaystate = 0;
+                    delayBtn.setBackground(getContext().getResources().getDrawable(R.drawable.not_selected));
+                    System.out.println("btn_delay-----------1");
+                }
+                else{
+                    isDelay = true;
+                    delaystate = 1;
+                    Toast.makeText(activity,"延时拍摄设置" ,Toast.LENGTH_SHORT).show();
+                    delayBtn.setBackground(getContext().getResources().getDrawable(R.drawable.is_selected));
+                    System.out.println("btn_delay-----------2");
+                }
+                break;
 //            case R.id.to_recorder:{
 //                stopPreview();
 //                closeCamera();
@@ -1085,6 +1162,30 @@ public class Camera2BasicFragment extends Fragment
 //
 //
 //            }
+            case R.id.btn_delay_setting:
+                btn_delay_layout.setVisibility(View.VISIBLE);
+
+                break;
+            case R.id.btn_delay3:
+
+                btn_delay_layout.setVisibility(View.INVISIBLE);
+                Toast.makeText(activity,"已选中3秒延时" ,Toast.LENGTH_SHORT).show();
+                btn_delay_setting.setText("3");
+                mDelayTime = 3 * 1000;
+                break;
+            case R.id.btn_delay5:
+
+                btn_delay_layout.setVisibility(View.INVISIBLE);
+                Toast.makeText(activity,"已选中5秒延时" ,Toast.LENGTH_SHORT).show();
+                btn_delay_setting.setText("5");
+                mDelayTime = 5 * 1000;
+                break;
+            case R.id.btn_delay10:
+                btn_delay_layout.setVisibility(View.INVISIBLE);
+                Toast.makeText(activity,"已选中10秒延时" ,Toast.LENGTH_SHORT).show();
+                btn_delay_setting.setText("10");
+                mDelayTime = 10 * 1000;
+                break;
         }
     }
 
@@ -1120,7 +1221,7 @@ public class Camera2BasicFragment extends Fragment
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
             //拍完照片并存储到系统相册目录下后，让系统相册更新。
             Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             Uri uri = Uri.fromFile(mFile);
@@ -1284,7 +1385,6 @@ public class Camera2BasicFragment extends Fragment
         intent.setData(uri);
         startActivity(intent);
     }
-
 
 }
 

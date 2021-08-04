@@ -1360,6 +1360,10 @@
         "source": "/home/zzh/.gradle/caches/transforms-2/files-2.1/f6991f10ae5ddcec02bf65d7d29eb785/support-media-compat-27.0.2/res/layout/notification_media_cancel_action.xml"
     },
     {
+        "merged": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/res/merged/debug/drawable-hdpi_is_selected.xml.flat",
+        "source": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/res/drawable-hdpi/is_selected.xml"
+    },
+    {
         "merged": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/res/merged/debug/drawable-mdpi-v4_abc_scrubber_primary_mtrl_alpha.9.png.flat",
         "source": "/home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/res/drawable-mdpi-v4/abc_scrubber_primary_mtrl_alpha.9.png"
     },
@@ -1394,6 +1398,10 @@
     {
         "merged": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/res/merged/debug/drawable-xxhdpi-v4_abc_list_selector_disabled_holo_light.9.png.flat",
         "source": "/home/zzh/.gradle/caches/transforms-2/files-2.1/8a1bafd3a6784dc29e2a0f1f4e2f437b/appcompat-v7-27.0.2/res/drawable-xxhdpi-v4/abc_list_selector_disabled_holo_light.9.png"
+    },
+    {
+        "merged": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/res/merged/debug/drawable-hdpi_not_selected.xml.flat",
+        "source": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/res/drawable-hdpi/not_selected.xml"
     },
     {
         "merged": "/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/build/intermediates/res/merged/debug/drawable-mdpi-v4_notify_panel_notification_icon_bg.png.flat",
