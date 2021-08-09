@@ -644,6 +644,7 @@ drawable abc_textfield_search_activated_mtrl_alpha
 drawable abc_textfield_search_default_mtrl_alpha
 drawable abc_textfield_search_material
 drawable abc_vector_test
+drawable circle_background
 drawable ic_action_info
 drawable ic_launcher
 drawable is_selected

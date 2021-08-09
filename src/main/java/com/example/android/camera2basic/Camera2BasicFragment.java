@@ -26,9 +26,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -43,6 +50,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaActionSound;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -65,6 +73,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -95,6 +104,7 @@ public class Camera2BasicFragment extends Fragment
     private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
     private boolean isFirstStart = true;
+    private ImageView imageView;
     public Activity activity;
     private boolean isDelay = false;
     private Button delayBtn;
@@ -526,6 +536,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
         view.findViewById(R.id.to_recorder).setOnClickListener(this);
+        imageView = view.findViewById(R.id.image);
         btn_delay_setting = view.findViewById(R.id.btn_delay_setting);
         btn_delay_setting.setOnClickListener(this);
         mTimeText = (TextView) view.findViewById(R.id.timer_text);
@@ -911,12 +922,14 @@ public class Camera2BasicFragment extends Fragment
             matrix.postRotate(180, centerX, centerY);
         }
         mTextureView.setTransform(matrix);
+
     }
 
     /**
      * Initiate a still image capture.
      */
     public void takePicture() {
+
         lockFocus();
 
 
@@ -1101,14 +1114,16 @@ public class Camera2BasicFragment extends Fragment
                 }else{
 
                         new CountDownTimer(mDelayTime, TIME_INTERVAL) {
+                            MediaActionSound mediaActionSound = new MediaActionSound();
+//                          mediaActionSound.load(0);
                             @Override
                             public void onTick(long millisUntilFinished) {
                                 mTimeText.setVisibility(View.VISIBLE);
                                 mTimeText.setText("" + (millisUntilFinished +1000)/ TIME_INTERVAL);
-//                                int i = mDelayTime/TIME_INTERVAL;
-//                                System.out.println("i++++++++++++++++"+i);
+                                if((millisUntilFinished+1000)/TIME_INTERVAL<= 3){
+                                    mediaActionSound.play(0);
+                                }
 
-//                                numText.setText("i");
                             }
 
                             @Override
@@ -1221,7 +1236,14 @@ public class Camera2BasicFragment extends Fragment
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-//            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    imageView.setImageBitmap(makeRoundCorner(bitmap));
+                }
+            });
+
             //拍完照片并存储到系统相册目录下后，让系统相册更新。
             Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             Uri uri = Uri.fromFile(mFile);
@@ -1248,6 +1270,41 @@ public class Camera2BasicFragment extends Fragment
         }
 
     }
+    public Bitmap makeRoundCorner(Bitmap bitmap) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int left = 0, top = 0, right = width, bottom = height;
+        float roundPx = height / 2;
+        if (width > height) {
+            left = (width - height) / 2;
+            top = 0;
+            right = left + height;
+            bottom = height;
+        } else if (height > width) {
+            left = 0;
+            top = (height - width) / 2;
+            right = width;
+            bottom = top + width;
+            roundPx = width / 2;
+        }
+
+        Bitmap output = Bitmap.createBitmap(width, height,
+                Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        int color = 0xff424242;
+        Paint paint = new Paint();
+        Rect rect = new Rect(left, top, right, bottom);
+        RectF rectF = new RectF(rect);
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+        return output;
+    }
+
 
     /**
      * Compares two {@code Size}s based on their areas.
