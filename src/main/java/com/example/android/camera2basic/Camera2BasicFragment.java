@@ -28,14 +28,9 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -48,6 +43,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaActionSound;
@@ -68,6 +64,7 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -78,6 +75,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -103,7 +101,6 @@ public class Camera2BasicFragment extends Fragment
     private static final String FRAGMENT_DIALOG = "dialog";
     private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
-    private boolean isFirstStart = true;
     private ImageView imageView;
     public Activity activity;
     private boolean isDelay = false;
@@ -112,10 +109,11 @@ public class Camera2BasicFragment extends Fragment
     private LinearLayout btn_delay_layout;
     private Button btn_delay_setting;
     private short mDelayTime;
-    private short mDelayState = 0;
     public static final int TIME_INTERVAL = 1000;
     private TextView mTimeText;
-    private TextView numText;
+    public  int mRotation;
+    boolean isFirstStart = true;
+    MyOrientationListener listener;
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -518,6 +516,9 @@ public class Camera2BasicFragment extends Fragment
         System.out.println("onAttach方法调用了====================");
         super.onAttach(context);
         this.activity = (Activity) context;
+        listener = new MyOrientationListener(context);
+
+        listener.enable();
     }
 
     @Override
@@ -532,6 +533,7 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
 //        cameraActivity = new CameraActivity();
+
         System.out.println("onViewCreated方法调用了====================");
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
@@ -596,18 +598,6 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-//                                           @NonNull int[] grantResults) {
-//        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-//            if (grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-//                ErrorDialog.newInstance(getString(R.string.request_permission))
-//                        .show(getChildFragmentManager(), FRAGMENT_DIALOG);
-//            }
-//        } else {
-//            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        }
-//    }
 
     /**
      * Sets up member variables related to camera.设置与相机相关的成员变量。
@@ -790,6 +780,7 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        listener.disable();
         System.out.println("onDestroyView方法调用了====================");
         if (null != mCameraDevice) {
             mCameraDevice.close();
@@ -891,6 +882,16 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
+    private class MyOrientationListener extends OrientationEventListener{
+        public MyOrientationListener(Context context){
+            super(context);
+        }
+
+        public void onOrientationChanged(int orientation){
+            mRotation = (orientation + 45) /90 *90;
+        }
+    }
+
     /**
      * Configures the necessary {@link android.graphics.Matrix} transformation to `mTextureView`.
      * This method should be called after the camera preview size is determined in
@@ -934,6 +935,7 @@ public class Camera2BasicFragment extends Fragment
 
 
     }
+
     
     /**
      * Lock the focus as the first step for a still image capture.
@@ -1002,8 +1004,11 @@ public class Camera2BasicFragment extends Fragment
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             setAutoFlash(captureBuilder);
 
+            System.out.println("mRotation+++++++++++++++++"+mRotation);
+            mPreviewRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION,mRotation);
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
             CameraCaptureSession.CaptureCallback CaptureCallback
                     = new CameraCaptureSession.CaptureCallback() {
@@ -1212,6 +1217,7 @@ public class Camera2BasicFragment extends Fragment
 
     }
 
+
     /**
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
@@ -1234,13 +1240,14 @@ public class Camera2BasicFragment extends Fragment
         @Override
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-            byte[] bytes = new byte[buffer.remaining()];
+            final byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            final Bitmap bitmap = adjustSourcePic(mCameraId,bytes);
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    imageView.setImageBitmap(makeRoundCorner(bitmap));
+
+                    imageView.setImageBitmap(bitmap);
                 }
             });
 
@@ -1250,7 +1257,6 @@ public class Camera2BasicFragment extends Fragment
             intent.setData(uri);
             getContext().sendBroadcast(intent);
 
-            //ivImage.setImageBitmap(bitmap);
             FileOutputStream output = null;
             try {
                 output = new FileOutputStream(mFile);
@@ -1270,39 +1276,56 @@ public class Camera2BasicFragment extends Fragment
         }
 
     }
-    public Bitmap makeRoundCorner(Bitmap bitmap) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int left = 0, top = 0, right = width, bottom = height;
-        float roundPx = height / 2;
-        if (width > height) {
-            left = (width - height) / 2;
-            top = 0;
-            right = left + height;
-            bottom = height;
-        } else if (height > width) {
-            left = 0;
-            top = (height - width) / 2;
-            right = width;
-            bottom = top + width;
-            roundPx = width / 2;
+    public static Bitmap adjustSourcePic(String CurrentCamera, byte[] data){
+        int orientation = 0;
+        try{
+            ExifInterface exifInterface = null;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                exifInterface = new ExifInterface(new ByteArrayInputStream(data));
+            }
+            int value = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION,-1);
+            Log.e(TAG, "values "+ value);
+            switch (value){
+                case ExifInterface.ORIENTATION_NORMAL:
+                    if (CurrentCamera.equals("0")){//后置摄像头
+                        orientation = 90;
+                    }else if(CurrentCamera.equals("1")){//前置摄像头
+                    orientation = 270;
+                    }
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    orientation = 180;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    if(CurrentCamera.equals("0")){//后置摄像头
+                        orientation = 270;
+                    }else if(CurrentCamera.equals("1")){//前置摄像头
+
+                        orientation = 90;
+                    }
+                    break;
+                case  ExifInterface.ORIENTATION_ROTATE_270:
+                    orientation = 0;
+                    break;
+            }
+
+        }catch (IOException e){
+            e.printStackTrace();
         }
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data,0,data.length);
+        Bitmap calBitmap;
+        Matrix rmatrix = new Matrix();
+        Matrix nmatrix = new Matrix();
 
-        Bitmap output = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-        int color = 0xff424242;
-        Paint paint = new Paint();
-        Rect rect = new Rect(left, top, right, bottom);
-        RectF rectF = new RectF(rect);
+        System.out.println("orientation+++++++++++++++++++++++++++++"+orientation);
+        rmatrix.setRotate(orientation,bitmap.getWidth()/2,bitmap.getHeight()/2);
+        calBitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),rmatrix,false);
 
-        paint.setAntiAlias(true);
-        canvas.drawARGB(0, 0, 0, 0);
-        paint.setColor(color);
-        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        canvas.drawBitmap(bitmap, rect, rect, paint);
-        return output;
+//        if(CurrentCamera.equals("1")){
+//            nmatrix.setScale(-1,1);
+//            calBitmap = Bitmap.createBitmap(calBitmap,0,0,calBitmap.getWidth(),calBitmap.getHeight(),rmatrix,false);
+//        }
+        return calBitmap;
     }
 
 

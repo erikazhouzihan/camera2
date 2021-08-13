@@ -133,19 +133,19 @@
                 android:text="录像"
                 android:padding="8dp"/>
         </LinearLayout>
-        <ImageView
+        <entity.CircleImageView
             android:id="@+id/image"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_marginLeft="20dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="50dp"
             android:padding="0dp"
             android:background="@drawable/circle_background"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             tools:ignore="MissingConstraints">
 
-        </ImageView>
+        </entity.CircleImageView>
 
         <Button
             android:id="@+id/picture"
