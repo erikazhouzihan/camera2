@@ -31,6 +31,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -96,6 +97,7 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Conversion from screen rotation to JPEG orientation.从屏幕旋转到 JPEG 方向的转换。
      */
+    private static final Camera2BasicFragment camera2BasicFragment = new Camera2BasicFragment();
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     private static final int REQUEST_CAMERA_PERMISSION = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
@@ -114,6 +116,11 @@ public class Camera2BasicFragment extends Fragment
     public  int mRotation;
     boolean isFirstStart = true;
     MyOrientationListener listener;
+    private float mOldDistance;
+    public CameraCharacteristics characteristics;
+    private int mZoom = 0; // 缩放
+    private CameraManager mCameraManager;
+    public int delayZero = 0;
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -209,7 +216,6 @@ public class Camera2BasicFragment extends Fragment
      */
     private String mCameraId;
 
-    private long currntTime;
 
     /**
      * An {@link AutoFitTextureView} for camera preview.为相机预览界面创建一个AutoFitTextureView
@@ -235,7 +241,6 @@ public class Camera2BasicFragment extends Fragment
     //用于预览的尺码参数
     private Size mPreviewSize;
 
-    private String date;
     /**
      * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its state.
      */
@@ -262,6 +267,8 @@ public class Camera2BasicFragment extends Fragment
         //摄像头出现错误时激发该方法
         public void onError(@NonNull CameraDevice cameraDevice, int error) {
             mCameraOpenCloseLock.release();
+
+            Log.i(TAG, "onError: mCameraDevice = null");
             cameraDevice.close();
             mCameraDevice = null;
             Activity activity = getActivity();
@@ -367,6 +374,7 @@ public class Camera2BasicFragment extends Fragment
             switch (mState) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
+                    startPreview();
                     break;
                 }
                 //等待对焦锁定
@@ -508,7 +516,7 @@ public class Camera2BasicFragment extends Fragment
     }
 
     public static Camera2BasicFragment newInstance() {
-        return new Camera2BasicFragment();
+        return camera2BasicFragment;
     }
 
     @Override
@@ -517,7 +525,7 @@ public class Camera2BasicFragment extends Fragment
         super.onAttach(context);
         this.activity = (Activity) context;
         listener = new MyOrientationListener(context);
-
+        mCameraManager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         listener.enable();
     }
 
@@ -546,6 +554,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.btn_delay3).setOnClickListener(this);
         view.findViewById(R.id.btn_delay5).setOnClickListener(this);
         view.findViewById(R.id.btn_delay10).setOnClickListener(this);
+        AutoFitTextureView autoFitTextureView = view.findViewById(R.id.texture);
         btn_delay_layout = view.findViewById(R.id.btn_delay_layout);
         delayBtn = view.findViewById(R.id.btn_delay);
         isDelay = (delaystate == 1);
@@ -569,7 +578,9 @@ public class Camera2BasicFragment extends Fragment
         super.onResume();
         System.out.println("onResume方法调用了====================");
         startBackgroundThread();
-        closeCamera();
+        System.out.println("mCameraDevice-----------------------"+mCameraDevice);
+//        closeCamera();
+
         // When the screen is turned off and turned back on, the SurfaceTexture is already
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
@@ -585,8 +596,8 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onPause() {
         System.out.println("onPause方法调用了====================");
-        stopBackgroundThread();
-        closeCamera();
+        System.out.println("mCameraDevice++++++++++++++++++++++++++"+mCameraDevice);
+        //closeCamera();
         super.onPause();
     }
 
@@ -612,7 +623,7 @@ public class Camera2BasicFragment extends Fragment
         try {
             for (String cameraId : manager.getCameraIdList()) {
                 //System.out.println("cameraId："+cameraId);
-                CameraCharacteristics characteristics
+                 characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
                 // We don't use a front facing camera in this sample.
@@ -730,14 +741,13 @@ public class Camera2BasicFragment extends Fragment
      * Opens the camera specified by {@link Camera2BasicFragment#mCameraId}.打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机。
      */
     //打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机
-    private void openCamera(int width, int height) {
+    void openCamera(int width, int height) {
         System.out.println("opneCamera方法调用了====================");
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission();
             return;
         }
-
         setUpCameraOutputs(width, height);
         configureTransform(width, height);
         Activity activity = getActivity();
@@ -758,8 +768,8 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Closes the current {@link CameraDevice}.
      */
-    private void closeCamera() {
-        System.out.println("closeCamera方法调用了====================");
+    public void closeCamera() {
+        System.out.println("closeCamera方法调用了===========mCameraDevice = null");
         try {
             mCameraOpenCloseLock.acquire();
             if (null != mCameraDevice) {
@@ -781,7 +791,7 @@ public class Camera2BasicFragment extends Fragment
     public void onDestroyView() {
         super.onDestroyView();
         listener.disable();
-        System.out.println("onDestroyView方法调用了====================");
+        System.out.println("onDestroyView方法调用了=============mCameraDevice = null");
         if (null != mCameraDevice) {
             mCameraDevice.close();
             mCameraDevice = null;
@@ -790,6 +800,7 @@ public class Camera2BasicFragment extends Fragment
             mCaptureSession.close();
             mCaptureSession = null;
         }
+        stopBackgroundThread();
     }
 
 
@@ -852,22 +863,22 @@ public class Camera2BasicFragment extends Fragment
                             // 当会话准备好时，我们开始显示预览。
                             mCaptureSession = cameraCaptureSession;
                             try {
-                                // Auto focus should be continuous for camera preview.
-                                //相机预览时自动对焦应该是连续的。
-                                mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                // Flash is automatically enabled when necessary.
-                                //必要时会自动启用闪光灯。
-                                setAutoFlash(mPreviewRequestBuilder);
-
-                                // 最后，我们开始显示相机预览。
-                                Log.e(TAG, "onConfigured: " + mCameraDevice);
-                                mPreviewRequest = mPreviewRequestBuilder.build();
-                                mCaptureSession.setRepeatingRequest(mPreviewRequest,
-                                        mCaptureCallback, mBackgroundHandler);
+                                cameraCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(), mCaptureCallback, mBackgroundHandler);
                             } catch (CameraAccessException e) {
                                 e.printStackTrace();
                             }
+                            // Auto focus should be continuous for camera preview.
+                            //相机预览时自动对焦应该是连续的。
+                            
+                            // Flash is automatically enabled when necessary.
+                            //必要时会自动启用闪光灯。
+//                            setAutoFlash(mPreviewRequestBuilder);
+
+                            // 最后，我们开始显示相机预览。
+//                            Log.e(TAG, "onConfigured: " + mCameraDevice);
+                            mPreviewRequest = mPreviewRequestBuilder.build();
+//                            startPreview();
+
                         }
 
                         @Override
@@ -1003,7 +1014,12 @@ public class Camera2BasicFragment extends Fragment
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             setAutoFlash(captureBuilder);
-
+            // 预览如果有放大，拍照的时候也应该保存相同的缩放
+            Rect zoomRect = mPreviewRequestBuilder.get(CaptureRequest.SCALER_CROP_REGION);
+            //在正常情况下，也就是为进行任何缩放操作前，zoomRect为null。
+            if (zoomRect != null) {
+                captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomRect);
+            }
             System.out.println("mRotation+++++++++++++++++"+mRotation);
             mPreviewRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION,mRotation);
             // Orientation
@@ -1051,9 +1067,8 @@ public class Camera2BasicFragment extends Fragment
      * finished.
      */
     //解锁焦点。当静止图像捕获序列完成时应调用此方法。
-    private void unlockFocus() {
+    private void unlockFocus(){
         try {
-
             // Reset the auto-focus trigger
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
@@ -1063,24 +1078,35 @@ public class Camera2BasicFragment extends Fragment
                     mBackgroundHandler);
             // After this, the camera will go back to the normal state of preview.
             mState = STATE_PREVIEW;
-            mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
-                    mBackgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
-    @SuppressLint("MissingPermission")
-    public void openCamera() {
-        Activity activity = getActivity();
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+//    @SuppressLint("MissingPermission")
+//    public void openCamera() {
+//        Activity activity = getActivity();
+//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+//        try {
+//            manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+//        } catch (CameraAccessException e) {
+//            e.printStackTrace();
+//        }
+//    }
+    public void startPreview() {
+        Log.v(TAG, "startPreview");
+        if (mCaptureSession == null || mPreviewRequestBuilder == null) {
+            Log.w(TAG, "startPreview: mCaptureSession or mPreviewRequestBuilder is null");
+            return;
+        }
         try {
-            manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+            // 开始预览，即一直发送预览的请求
+            mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
-
     public void stopPreview() {
         if (mCaptureSession != null) {
             try {
@@ -1095,7 +1121,7 @@ public class Camera2BasicFragment extends Fragment
     private void switchCamera() {
 
         Activity activity = getActivity();
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         if (mCameraId.equals("0")) {
             mCameraId = "1";
         } else if (mCameraId.equals("1")) {
@@ -1142,7 +1168,7 @@ public class Camera2BasicFragment extends Fragment
                 break;
             }
             case R.id.exchangeCamera2: {
-                Activity activity = getActivity();
+//                Activity activity = getActivity();
                 switchCamera();
                 break;
             }
@@ -1166,24 +1192,16 @@ public class Camera2BasicFragment extends Fragment
                     System.out.println("btn_delay-----------2");
                 }
                 break;
-//            case R.id.to_recorder:{
-//                stopPreview();
-//                closeCamera();
-//                //获取fragment的实例
-//                Camera2VideoFragment fragment_Vedio=new Camera2VideoFragment();
-//                //获取Fragment的管理器
-//                FragmentManager fragmentManager=getChildFragmentManager();
-//                //开启fragment的事物,在这个对象里进行fragment的增删替换等操作。
-//                FragmentTransaction ft=fragmentManager.beginTransaction();
-//                //跳转到fragment，第一个参数为所要替换的位置id，第二个参数是替换后的fragment
-//                ft.replace(R.layout.fragment_camera2_video,fragment_Vedio);
-//                //提交事物
-//                ft.commit();
-//
-//
-//            }
+
             case R.id.btn_delay_setting:
-                btn_delay_layout.setVisibility(View.VISIBLE);
+                if(delayZero == 0){
+                    delayZero = 1;
+                    btn_delay_layout.setVisibility(View.VISIBLE);
+                }else{
+                    delayZero = 0;
+                    btn_delay_layout.setVisibility(View.INVISIBLE);
+                }
+
 
                 break;
             case R.id.btn_delay3:
@@ -1315,7 +1333,7 @@ public class Camera2BasicFragment extends Fragment
         Bitmap bitmap = BitmapFactory.decodeByteArray(data,0,data.length);
         Bitmap calBitmap;
         Matrix rmatrix = new Matrix();
-        Matrix nmatrix = new Matrix();
+//        Matrix nmatrix = new Matrix();
 
         System.out.println("orientation+++++++++++++++++++++++++++++"+orientation);
         rmatrix.setRotate(orientation,bitmap.getWidth()/2,bitmap.getHeight()/2);
@@ -1466,6 +1484,41 @@ public class Camera2BasicFragment extends Fragment
         startActivity(intent);
     }
 
+    //缩放事件手势处理
+
+    public void handleZoom(boolean isZoomIn) {
+        System.out.println("handleZoom++++++++++++++++++++++");
+        if (mCameraDevice == null || characteristics == null || mPreviewRequestBuilder == null) {
+            System.out.println("mCameraDevice eeeeeeeeeeeeeeeeeeeeee"+mCameraDevice);
+            System.out.println("characteristics ssssssssssssssssssssss"+characteristics);
+            System.out.println("mPreviewRequestBuilder rrrrrrrrrrrrrrrrrrrrrrr"+mPreviewRequestBuilder);
+            return;
+        }
+        // maxZoom 表示 active_rect 宽度除以 crop_rect 宽度的最大值
+        float maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        Log.d(TAG, "handleZoom: maxZoom: " + maxZoom);
+        int factor = 50; // 放大/缩小的一个因素，设置越大越平滑，相应放大的速度也越慢
+        if (isZoomIn && mZoom < factor) {
+            mZoom++;
+        } else if (mZoom > 0) {
+            mZoom--;
+        }
+        System.out.println("handleZoom---------------------");
+        Log.d(TAG, "handleZoom: mZoom: " + mZoom);
+        Rect rect = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        int minW = (int) ((rect.width() - rect.width() / maxZoom) / (2 * factor));
+        int minH = (int) ((rect.height() - rect.height() / maxZoom) / (2 * factor));
+        int cropW = minW * mZoom;
+        int cropH = minH * mZoom;
+        Log.d(TAG, "handleZoom: cropW: " + cropW + ", cropH: " + cropH);
+        Rect zoomRect = new Rect(cropW, cropH, rect.width() - cropW, rect.height() - cropH);
+        mPreviewRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomRect);
+        mPreviewRequest = mPreviewRequestBuilder.build();
+        startPreview(); // 需要重新 start preview 才能生效0
+    }
+    public Size getPreviewSize() {
+        return mPreviewSize;
+    }
 }
 
 

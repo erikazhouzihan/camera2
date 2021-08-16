@@ -17,8 +17,12 @@
 package com.example.android.camera2basic;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.TextureView;
+
 
 /**
  * A {@link TextureView} that can be adjusted to a specified aspect ratio.
@@ -27,6 +31,9 @@ public class AutoFitTextureView extends TextureView {
 
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
+    private float mOldDistance;
+    private static final String TAG = "AutoFitTextureView";
+    Camera2BasicFragment camera2BasicFragment = Camera2BasicFragment.newInstance();
 
     public AutoFitTextureView(Context context) {
         this(context, null);
@@ -34,12 +41,48 @@ public class AutoFitTextureView extends TextureView {
 
     public AutoFitTextureView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
+        init(context);
     }
 
     public AutoFitTextureView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
+    private void init(Context context) {
+        setSurfaceTextureListener(mSurfaceTextureListener);
+        camera2BasicFragment = Camera2BasicFragment.newInstance();
+    }
+    private SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            Log.v(TAG, "onSurfaceTextureAvailable. width: " + width + ", height: " + height);
+            camera2BasicFragment.openCamera(width, height);
+            //camera2BasicFragment.setPreviewSurface(surface);
+            // resize TextureView
+            int previewWidth = camera2BasicFragment.getPreviewSize().getWidth();
+            int previewHeight = camera2BasicFragment.getPreviewSize().getHeight();
+            if (width > height) {
+                setAspectRatio(previewWidth, previewHeight);
+            } else {
+                setAspectRatio(previewHeight, previewWidth);
+            }
+        }
 
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+            Log.v(TAG, "onSurfaceTextureSizeChanged. width: " + width + ", height: " + height);
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            Log.v(TAG, "onSurfaceTextureDestroyed");
+            camera2BasicFragment.closeCamera();
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        }
+    };
     /**
      * Sets the aspect ratio for this view. The size of the view will be measured based on the ratio
      * calculated from the parameters. Note that the actual sizes of parameters don't matter, that
@@ -72,5 +115,39 @@ public class AutoFitTextureView extends TextureView {
             }
         }
     }
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        System.out.println("touch+++++++++++++++++++++++++++++++++");
+        System.out.println("getPointerCount = "+event.getPointerCount());
+        if (event.getPointerCount() == 2) { // 当触碰点有2个时，才去放大缩小
+            System.out.println("MotionEvent.ACTION_MOVE"+MotionEvent.ACTION_MOVE);
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    // 点下时，得到两个点间的距离为mOldDistance
+                    mOldDistance = getFingerSpacing(event);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    // 移动时，根据距离是变大还是变小，去放大还是缩小预览画面
+                    float newDistance = getFingerSpacing(event);
+                    if (newDistance > mOldDistance) {
+                        camera2BasicFragment.handleZoom(true);
+                    } else if (newDistance < mOldDistance) {
+                        camera2BasicFragment.handleZoom(false);
+                    }
+                    // 更新mOldDistance
+                    mOldDistance = newDistance;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return true;
+    }
+    private static float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
 
 }
