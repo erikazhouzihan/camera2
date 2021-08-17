@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -36,6 +37,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaRecorder;
@@ -73,6 +75,10 @@ import java.util.concurrent.TimeUnit;
 public class Camera2VideoFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
+    private CaptureRequest mPreviewRequest;
+    private int mZoom = 0;
+    public CameraCharacteristics characteristics;
+    private static final Camera2VideoFragment camera2VideoFragment = new Camera2VideoFragment();
     //传感器方向默认度数
     private static final int SENSOR_ORIENTATION_DEFAULT_DEGREES = 90;
     //传感器方向默认度数
@@ -115,7 +121,7 @@ public class Camera2VideoFragment extends Fragment
     /**
      * An {@link AutoFitTextureView} for camera preview.
      */
-    private AutoFitTextureView mTextureView;
+    private AutoFitTextureView1 mTextureView;
 
     /**
      * Button to record video
@@ -239,7 +245,7 @@ public class Camera2VideoFragment extends Fragment
     private CaptureRequest.Builder mPreviewBuilder;
 
     public static Camera2VideoFragment newInstance() {
-        return new Camera2VideoFragment();
+        return camera2VideoFragment;
     }
 
     /**
@@ -306,7 +312,7 @@ public class Camera2VideoFragment extends Fragment
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        mTextureView = (AutoFitTextureView) view.findViewById(R.id.videoView);
+        mTextureView = (AutoFitTextureView1) view.findViewById(R.id.videoView);
         mButtonVideo = (Button) view.findViewById(R.id.btn_video);
         mButtonVideo.setOnClickListener(this);
         view.findViewById(R.id.to_take_photo).setOnClickListener(this);
@@ -394,53 +400,6 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
-    /**
-     * Gets whether you should show UI with rationale for requesting permissions.
-     *
-     * @param permissions The permissions your app wants to request.
-     * @return Whether you can show permission rationale UI.
-     */
-//    private boolean shouldShowRequestPermissionRationale(String[] permissions) {
-//        for (String permission : permissions) {
-//            if (FragmentCompat.shouldShowRequestPermissionRationale(this, permission)) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-
-    /**
-     * Requests permissions needed for recording video.
-     */
-//    private void requestVideoPermissions() {
-//        if (shouldShowRequestPermissionRationale(VIDEO_PERMISSIONS)) {
-//            new ConfirmationDialog().show(getChildFragmentManager(), FRAGMENT_DIALOG);
-//        } else {
-//            FragmentCompat.requestPermissions(this, VIDEO_PERMISSIONS, REQUEST_VIDEO_PERMISSIONS);
-//        }
-//    }
-
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-//                                           @NonNull int[] grantResults) {
-//        Log.d(TAG, "onRequestPermissionsResult");
-//        if (requestCode == REQUEST_VIDEO_PERMISSIONS) {
-//            if (grantResults.length == VIDEO_PERMISSIONS.length) {
-//                for (int result : grantResults) {
-//                    if (result != PackageManager.PERMISSION_GRANTED) {
-//                        ErrorDialog.newInstance(getString(R.string.permission_request))
-//                                .show(getChildFragmentManager(), FRAGMENT_DIALOG);
-//                        break;
-//                    }
-//                }
-//            } else {
-//                ErrorDialog.newInstance(getString(R.string.permission_request))
-//                        .show(getChildFragmentManager(), FRAGMENT_DIALOG);
-//            }
-//        } else {
-//            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        }
-//    }
     private boolean hasPermissionsGranted(String[] permissions) {
         for (String permission : permissions) {
             if (ActivityCompat.checkSelfPermission(getActivity(), permission)
@@ -455,7 +414,7 @@ public class Camera2VideoFragment extends Fragment
      * Tries to open a {@link CameraDevice}. The result is listened by `mStateCallback`.
      */
     @SuppressWarnings("MissingPermission")
-    private void openCamera(int width, int height) {
+    public void openCamera(int width, int height) {
 //        if (!hasPermissionsGranted(VIDEO_PERMISSIONS)) {
 //            requestVideoPermissions();
 //            return;
@@ -473,7 +432,7 @@ public class Camera2VideoFragment extends Fragment
             String cameraId = manager.getCameraIdList()[0];
 
             // Choose the sizes for camera preview and video recording
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+             characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
@@ -506,7 +465,7 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
-    private void closeCamera() {
+    public void closeCamera() {
         try {
             mCameraOpenCloseLock.acquire();
             closePreviewSession();
@@ -683,6 +642,7 @@ public class Camera2VideoFragment extends Fragment
             List<Surface> surfaces = new ArrayList<>();
 
             // Set up Surface for the camera preview
+            //在正常情况下，也就是为进行任何缩放操作前，zoomRect为null。
             Surface previewSurface = new Surface(texture);
             surfaces.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
@@ -819,5 +779,63 @@ public class Camera2VideoFragment extends Fragment
         }
 
     }
+    public void handleZoom(boolean isZoomIn) {
+        System.out.println("handleZoom++++++++++++++++++++++");
+        if (mCameraDevice == null || characteristics == null || mPreviewBuilder == null) {
+            System.out.println("mCameraDevice eeeeeeeeeeeeeeeeeeeeee"+mCameraDevice);
+            System.out.println("characteristics ssssssssssssssssssssss"+characteristics);
+            System.out.println("mPreviewRequestBuilder rrrrrrrrrrrrrrrrrrrrrrr"+mPreviewBuilder);
+            return;
+        }
+        // maxZoom 表示 active_rect 宽度除以 crop_rect 宽度的最大值
+        float maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+        Log.d(TAG, "handleZoom: maxZoom: " + maxZoom);
+        int factor = 50; // 放大/缩小的一个因素，设置越大越平滑，相应放大的速度也越慢
+        if (isZoomIn && mZoom < factor) {
+            mZoom++;
+        } else if (mZoom > 0) {
+            mZoom--;
+        }
+        System.out.println("handleZoom---------------------");
+        Log.d(TAG, "handleZoom: mZoom: " + mZoom);
+        Rect rect = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        int minW = (int) ((rect.width() - rect.width() / maxZoom) / (2 * factor));
+        int minH = (int) ((rect.height() - rect.height() / maxZoom) / (2 * factor));
+        int cropW = minW * mZoom;
+        int cropH = minH * mZoom;
+        Log.d(TAG, "handleZoom: cropW: " + cropW + ", cropH: " + cropH);
+        Rect zoomRect = new Rect(cropW, cropH, rect.width() - cropW, rect.height() - cropH);
+        mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomRect);
+        mPreviewRequest = mPreviewBuilder.build();
+        try {
+            mPreviewSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback, mBackgroundHandler); // 需要重新 start preview 才能生效0
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+    public Size getPreviewSize() {
+        return mPreviewSize;
+    }
+    private CameraCaptureSession.CaptureCallback mCaptureCallback
+            = new CameraCaptureSession.CaptureCallback() {
+
+
+
+        @Override
+        public void onCaptureProgressed(@NonNull CameraCaptureSession session,
+                                        @NonNull CaptureRequest request,
+                                        @NonNull CaptureResult partialResult) {
+
+        }
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                       @NonNull CaptureRequest request,
+                                       @NonNull TotalCaptureResult result) {
+
+//            Log.e(TAG, "onCaptureCompleted: 11111" );
+        }
+
+    };
 
 }

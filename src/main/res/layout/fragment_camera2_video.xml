@@ -7,7 +7,7 @@
     android:background="@color/black"
     tools:context="Camera2VideoFragment">
 
-    <com.example.android.camera2basic.AutoFitTextureView
+    <com.example.android.camera2basic.AutoFitTextureView1
         android:id="@+id/videoView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
