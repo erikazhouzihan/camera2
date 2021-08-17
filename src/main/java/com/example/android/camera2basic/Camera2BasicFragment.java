@@ -598,7 +598,24 @@ public class Camera2BasicFragment extends Fragment
         System.out.println("onPause方法调用了====================");
         System.out.println("mCameraDevice++++++++++++++++++++++++++"+mCameraDevice);
         //closeCamera();
+//        stopPreview();
+//        startPreview();
         super.onPause();
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        listener.disable();
+        System.out.println("onDestroyView方法调用了=============mCameraDevice = null");
+        if (null != mCameraDevice) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+        if (null != mCaptureSession) {
+            mCaptureSession.close();
+            mCaptureSession = null;
+        }
+        stopBackgroundThread();
     }
 
     private void requestCameraPermission() {
@@ -753,15 +770,12 @@ public class Camera2BasicFragment extends Fragment
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
-//            if (!mCameraOpenCloseLock.tryAcquire(5000, TimeUnit.MILLISECONDS)) {
-//                throw new RuntimeException("Time out waiting to lock camera opening.");
-//            }
+
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             Log.e(TAG, "openCamera: 相机打开异常...");
             e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
+          throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
         }
     }
 
@@ -787,21 +801,7 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        listener.disable();
-        System.out.println("onDestroyView方法调用了=============mCameraDevice = null");
-        if (null != mCameraDevice) {
-            mCameraDevice.close();
-            mCameraDevice = null;
-        }
-        if (null != mCaptureSession) {
-            mCaptureSession.close();
-            mCaptureSession = null;
-        }
-        stopBackgroundThread();
-    }
+
 
 
     /**
@@ -1084,16 +1084,6 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-//    @SuppressLint("MissingPermission")
-//    public void openCamera() {
-//        Activity activity = getActivity();
-//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-//        try {
-//            manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
-//        } catch (CameraAccessException e) {
-//            e.printStackTrace();
-//        }
-//    }
     public void startPreview() {
         Log.v(TAG, "startPreview");
         if (mCaptureSession == null || mPreviewRequestBuilder == null) {
@@ -1173,8 +1163,9 @@ public class Camera2BasicFragment extends Fragment
                 break;
             }
             case R.id.to_recorder: {
-                isFirstStart = false;
-                ((CameraActivity)activity).switchFragment("Camera2BasicFragment","Camera2VideoFragment");
+//                isFirstStart = false;
+                ((CameraActivity)activity).switchFragment(Camera2VideoFragment.newInstance());
+
                 break;
             }
             case R.id.btn_delay:

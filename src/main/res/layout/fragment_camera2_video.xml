@@ -62,19 +62,6 @@
         tools:ignore="MissingConstraints">
 
         <ImageView
-            android:id="@+id/image"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginBottom="10dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:background="@drawable/white_circle_background"
-            tools:ignore="MissingConstraints"
-            android:layout_marginLeft="20dp">
-
-        </ImageView>
-
-        <ImageView
             android:id="@+id/facingChange"
             android:layout_width="50dp"
             android:layout_height="50dp"

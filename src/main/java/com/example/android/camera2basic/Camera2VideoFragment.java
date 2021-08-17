@@ -75,6 +75,8 @@ import java.util.concurrent.TimeUnit;
 public class Camera2VideoFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
+    public String mCameraId = "0";
+    SurfaceTexture texture;
     private CaptureRequest mPreviewRequest;
     private int mZoom = 0;
     public CameraCharacteristics characteristics;
@@ -315,10 +317,11 @@ public class Camera2VideoFragment extends Fragment
         mTextureView = (AutoFitTextureView1) view.findViewById(R.id.videoView);
         mButtonVideo = (Button) view.findViewById(R.id.btn_video);
         mButtonVideo.setOnClickListener(this);
+
         view.findViewById(R.id.to_take_photo).setOnClickListener(this);
         timer = view.findViewById(R.id.timer);
 
-//        view.findViewById(R.id.info).setOnClickListener(this);
+        view.findViewById(R.id.facingChange).setOnClickListener(this);
     }
 
     @Override
@@ -336,9 +339,23 @@ public class Camera2VideoFragment extends Fragment
 
     @Override
     public void onPause() {
-        closeCamera();
-        stopBackgroundThread();
+//        closeCamera();
+//        stopBackgroundThread();
         super.onPause();
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        System.out.println("onDestroyView方法调用了=============mCameraDevice = null");
+        if (null != mCameraDevice) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+        if (null != mPreviewSession) {
+            mPreviewSession.close();
+            mPreviewSession = null;
+        }
+        stopBackgroundThread();
     }
 
     @Override
@@ -358,23 +375,35 @@ public class Camera2VideoFragment extends Fragment
                 }
                 break;
             }
-            case R.id.info: {
+
+            case R.id.facingChange: {
                 Activity activity = getActivity();
-                if (null != activity) {
-                    new AlertDialog.Builder(activity)
-                            .setMessage(R.string.intro_message)
-                            .setPositiveButton(android.R.string.ok, null)
-                            .show();
-                }
+                switchCamera();
                 break;
             }
             case R.id.to_take_photo: {
                 isFirstStart = false;
-                ((CameraActivity) activity).switchFragment("Camera2VideoFragment", "Camera2BasicFragment");
+                ((CameraActivity) activity).switchFragment(Camera2BasicFragment.newInstance());
                 break;
             }
 
         }
+    }
+    private void switchCamera() {
+
+        Activity activity = getActivity();
+//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        if (mCameraId.equals("0")) {
+            mCameraId = "1";
+        } else if (mCameraId.equals("1")) {
+            mCameraId = "0";
+        }
+        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++=");
+        stopPreview();
+        closeCamera();
+
+        openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+
     }
 
     /**
@@ -429,10 +458,10 @@ public class Camera2VideoFragment extends Fragment
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            String cameraId = manager.getCameraIdList()[0];
+//            String cameraId = manager.getCameraIdList()[0];
 
-            // Choose the sizes for camera preview and video recording
-             characteristics = manager.getCameraCharacteristics(cameraId);
+            // 选择相机预览和视频录制的尺寸
+            characteristics = manager.getCameraCharacteristics(mCameraId);
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
@@ -451,7 +480,7 @@ public class Camera2VideoFragment extends Fragment
             }
             configureTransform(width, height);
             mMediaRecorder = new MediaRecorder();
-            manager.openCamera(cameraId, mStateCallback, null);
+            manager.openCamera(mCameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
             Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
             activity.finish();
@@ -493,7 +522,7 @@ public class Camera2VideoFragment extends Fragment
         }
         try {
             closePreviewSession();
-            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -520,6 +549,16 @@ public class Camera2VideoFragment extends Fragment
                     }, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        }
+    }
+    public void stopPreview() {
+        if (mPreviewSession != null) {
+            try {
+                mPreviewSession.abortCaptures();
+                mPreviewSession.close();
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -642,7 +681,6 @@ public class Camera2VideoFragment extends Fragment
             List<Surface> surfaces = new ArrayList<>();
 
             // Set up Surface for the camera preview
-            //在正常情况下，也就是为进行任何缩放操作前，zoomRect为null。
             Surface previewSurface = new Surface(texture);
             surfaces.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
