@@ -460,7 +460,7 @@ public class Camera2VideoFragment extends Fragment
             }
 //            String cameraId = manager.getCameraIdList()[0];
 
-            // 选择相机预览和视频录制的尺寸
+            // Choose the sizes for camera preview and video recording
             characteristics = manager.getCameraCharacteristics(mCameraId);
             StreamConfigurationMap map = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);

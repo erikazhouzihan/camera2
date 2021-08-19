@@ -110,6 +110,8 @@ public class Camera2BasicFragment extends Fragment
     private int delaystate = 0;
     private LinearLayout btn_delay_layout;
     private Button btn_delay_setting;
+    private Button btn_change_preview;
+    private LinearLayout btn_Paint;
     private short mDelayTime;
     public static final int TIME_INTERVAL = 1000;
     private TextView mTimeText;
@@ -121,6 +123,9 @@ public class Camera2BasicFragment extends Fragment
     private int mZoom = 0; // 缩放
     private CameraManager mCameraManager;
     public int delayZero = 0;
+    public List<Size> outputsizes;
+    public int changePreview;
+    String PaintFlag = "4:3";
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -192,7 +197,7 @@ public class Camera2BasicFragment extends Fragment
         @Override
         //打开预览的回调函数
         public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
-            openCamera(width, height);
+            openCamera();
         }
 
         @Override
@@ -260,7 +265,7 @@ public class Camera2BasicFragment extends Fragment
         //摄像头断开连接时激发该方法
         public void onDisconnected(@NonNull CameraDevice cameraDevice) {
             mCameraOpenCloseLock.release();
-            cameraDevice.close();
+//            cameraDevice.close();
         }
 
         @Override
@@ -506,11 +511,14 @@ public class Camera2BasicFragment extends Fragment
         // largest of those not big enough.
         //选择那些足够大的最小的。如果没有足够大的，则从那些不够大的中选择最大的。
         if (bigEnough.size() > 0) {
+            System.out.println("++++++++++++++++++++"+Collections.min(bigEnough, new CompareSizesByArea()));
             return Collections.min(bigEnough, new CompareSizesByArea());
         } else if (notBigEnough.size() > 0) {
+            System.out.println("++++++++++++++++++++"+Collections.max(notBigEnough, new CompareSizesByArea()));
             return Collections.max(notBigEnough, new CompareSizesByArea());
         } else {
             Log.e(TAG, "Couldn't find any suitable preview size");
+            System.out.println("++++++++++++++++++++"+choices[0]);
             return choices[0];
         }
     }
@@ -547,15 +555,24 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
         view.findViewById(R.id.to_recorder).setOnClickListener(this);
         imageView = view.findViewById(R.id.image);
+        //延迟
         btn_delay_setting = view.findViewById(R.id.btn_delay_setting);
         btn_delay_setting.setOnClickListener(this);
+        btn_change_preview = view.findViewById(R.id.btn_change_preview);
+        btn_change_preview.setOnClickListener(this);
         mTimeText = (TextView) view.findViewById(R.id.timer_text);
-//        numText = view.findViewById(R.id.txt_num);
+
+        btn_delay_layout = view.findViewById(R.id.btn_delay_layout);
         view.findViewById(R.id.btn_delay3).setOnClickListener(this);
         view.findViewById(R.id.btn_delay5).setOnClickListener(this);
         view.findViewById(R.id.btn_delay10).setOnClickListener(this);
+        btn_Paint = view.findViewById(R.id.btn_Paint);
+        view.findViewById(R.id.btn_Paint_1).setOnClickListener(this);
+        view.findViewById(R.id.btn_Paint_4).setOnClickListener(this);
+        view.findViewById(R.id.btn_Paint_16).setOnClickListener(this);
         AutoFitTextureView autoFitTextureView = view.findViewById(R.id.texture);
-        btn_delay_layout = view.findViewById(R.id.btn_delay_layout);
+
+
         delayBtn = view.findViewById(R.id.btn_delay);
         isDelay = (delaystate == 1);
         if (isDelay)
@@ -587,7 +604,7 @@ public class Camera2BasicFragment extends Fragment
         // the SurfaceTextureListener).
         //当屏幕关闭并重新打开时，SurfaceTexture已经可用，并且不会调用“onSurfaceTextureAvailable”。在这种情况下，我们可以打开一个相机并从这里开始预览（否则，我们会等到 Surface 在SurfaceTextureListener 中准备好）。
         if (mTextureView.isAvailable()) {
-            openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+            openCamera();
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
@@ -634,17 +651,14 @@ public class Camera2BasicFragment extends Fragment
      * @param height The height of available size for camera preview
      */
     @SuppressWarnings("SuspiciousNameCombination")
-    private void setUpCameraOutputs(int width, int height) {
+    private void setUpCameraOutputs() {
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : manager.getCameraIdList()) {
-                //System.out.println("cameraId："+cameraId);
                  characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
-                // We don't use a front facing camera in this sample.
-                //我们在此示例中不使用前置摄像头。
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
@@ -655,17 +669,60 @@ public class Camera2BasicFragment extends Fragment
                 if (map == null) {
                     continue;
                 }
+                outputsizes = getCameraOutputSizes(cameraId, SurfaceTexture.class);
+                double y = 0;
+                switch (PaintFlag){
+                    case "1:1":
+                        y = 1.0/1.0;
+                        break;
+                    case "4:3":
+                        y = 4.0/3.0;
+                        break;
+                    case  "18:9":
+                        y = 18.0/9.0;
+                        break;
+                }
+                for(int size = 0;size < outputsizes.size(); size++ ){
+                    double j = (double)outputsizes.get(size).getHeight();
+                    double k = (double)outputsizes.get(size).getWidth();
+                    double x = k/j;
+                    System.out.println("=========================" + y);
+                    System.out.println("========================="+ outputsizes.get(size));
+                    System.out.println("========================="+ x );
+                    if(x  ==  y){
+                        System.out.println("11111111111111111111111111111111111");
+                        mPreviewSize = outputsizes.get(size);
+                        break;
+                    }
+                }
+                int orientation = getResources().getConfiguration().orientation;
+//                System.out.println("mPreviewSize.getWidth(),mPreviewSize.getHeight())"+mPreviewSize.getWidth()+mPreviewSize.getHeight());
+                System.out.println("mPreviewSize.getWidth(),mPreviewSize.getHeight()"+mPreviewSize.getWidth()+"X"+mPreviewSize.getHeight());
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    mTextureView.setAspectRatio(
+                            mPreviewSize.getWidth(),mPreviewSize.getHeight());
 
-//                 For still image captures, we use the largest available size.
+                } else {
+                    mTextureView.setAspectRatio(
+                            mPreviewSize.getHeight(),mPreviewSize.getWidth());
+                }
                 //对于静态图像捕获，我们使用最大的可用尺寸。
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
-                mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                        ImageFormat.JPEG, /*maxImages*/2);
+                if(PaintFlag == "4:3"){
+                    mImageReader = ImageReader.newInstance(largest.getWidth(),largest.getHeight(),
+                            ImageFormat.JPEG, /*maxImages*/2);
+                }else if(PaintFlag == "1:1"){
+                    mImageReader = ImageReader.newInstance(mTextureView.getWidth(), mTextureView.getHeight(),
+                            ImageFormat.JPEG, /*maxImages*/2);
+
+                }else{
+                    mImageReader = ImageReader.newInstance(mTextureView.getHeight(), mTextureView.getWidth(),
+                            ImageFormat.JPEG, /*maxImages*/2);
+                }
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
-
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
                 //找出我们是否需要交换尺寸以获得相对于传感器坐标的预览尺寸。
@@ -674,66 +731,61 @@ public class Camera2BasicFragment extends Fragment
                 //没有检查恒定条件//ConstantConditions
                 mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 
-                boolean swappedDimensions = false;
-                switch (displayRotation) {
-                    case Surface.ROTATION_0:
-                    case Surface.ROTATION_180:
-                        if (mSensorOrientation == 90 || mSensorOrientation == 270) {
-                            swappedDimensions = true;
-                        }
-                        break;
-                    case Surface.ROTATION_90:
-                    case Surface.ROTATION_270:
-                        if (mSensorOrientation == 0 || mSensorOrientation == 180) {
-                            swappedDimensions = true;
-                        }
-                        break;
-                    default:
-                        Log.e(TAG, "Display rotation is invalid: " + displayRotation);
-                }
+//                boolean swappedDimensions = false;
+//                switch (displayRotation) {
+//                    case Surface.ROTATION_0:
+//                    case Surface.ROTATION_180:
+//                        if (mSensorOrientation == 90 || mSensorOrientation == 270) {
+//                            swappedDimensions = true;
+//                        }
+//                        break;
+//                    case Surface.ROTATION_90:
+//                    case Surface.ROTATION_270:
+//                        if (mSensorOrientation == 0 || mSensorOrientation == 180) {
+//                            swappedDimensions = true;
+//                        }
+//                        break;
+//                    default:
+//                        Log.e(TAG, "Display rotation is invalid: " + displayRotation);
+//                }
 
                 Point displaySize = new Point();
                 activity.getWindowManager().getDefaultDisplay().getSize(displaySize);
-                int rotatedPreviewWidth = width;
-                int rotatedPreviewHeight = height;
-                int maxPreviewWidth = displaySize.x;
-                int maxPreviewHeight = displaySize.y;
-
-                if (swappedDimensions) {
-                    rotatedPreviewWidth = height;
-                    rotatedPreviewHeight = width;
-                    maxPreviewWidth = displaySize.y;
-                    maxPreviewHeight = displaySize.x;
-                }
-
-                if (maxPreviewWidth > MAX_PREVIEW_WIDTH) {
-                    maxPreviewWidth = MAX_PREVIEW_WIDTH;
-                }
-
-                if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
-                    maxPreviewHeight = MAX_PREVIEW_HEIGHT;
-                }
+//                int rotatedPreviewWidth = width;
+//                int rotatedPreviewHeight = height;
+//                int maxPreviewWidth = displaySize.x;
+//                int maxPreviewHeight = displaySize.y;
+//
+//                if (swappedDimensions) {
+//                    rotatedPreviewWidth = height;
+//                    rotatedPreviewHeight = width;
+//                    maxPreviewWidth = displaySize.y;
+//                    maxPreviewHeight = displaySize.x;
+//                }
+//
+//                if (maxPreviewWidth > MAX_PREVIEW_WIDTH) {
+//                    maxPreviewWidth = MAX_PREVIEW_WIDTH;
+//                }
+//
+//                if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
+//                    maxPreviewHeight = MAX_PREVIEW_HEIGHT;
+//                }
 
                 // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
-                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest);
+
+
+//                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+//                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+//                        maxPreviewHeight, largest);
 
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
-                int orientation = getResources().getConfiguration().orientation;
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    mTextureView.setAspectRatio(
-                            mPreviewSize.getWidth(), mPreviewSize.getHeight());
-                } else {
-                    mTextureView.setAspectRatio(
-                            mPreviewSize.getHeight(), mPreviewSize.getWidth());
-                }
+
 
                 // Check if the flash is supported.
-                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                mFlashSupported = available == null ? false : available;
+//                Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
+//                mFlashSupported = available == null ? false : available;
                 if (mCameraId == null) {
                     cameraId = "0";
                 } else if (mCameraId == "1") {
@@ -753,20 +805,31 @@ public class Camera2BasicFragment extends Fragment
                     .show(getChildFragmentManager(), FRAGMENT_DIALOG);
         }
     }
+    public List<Size> getCameraOutputSizes(String cameraId, Class clz){
+        try {
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            return Arrays.asList(configs.getOutputSizes(clz));
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 
     /**
      * Opens the camera specified by {@link Camera2BasicFragment#mCameraId}.打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机。
      */
     //打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机
-    void openCamera(int width, int height) {
+    void openCamera() {
         System.out.println("opneCamera方法调用了====================");
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission();
             return;
         }
-        setUpCameraOutputs(width, height);
-        configureTransform(width, height);
+        setUpCameraOutputs();
+//        configureTransform(width, height);
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -1120,7 +1183,7 @@ public class Camera2BasicFragment extends Fragment
         stopPreview();
         closeCamera();
 
-        openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+        openCamera();
 
     }
 
@@ -1131,6 +1194,8 @@ public class Camera2BasicFragment extends Fragment
         switch (view.getId()) {
             case R.id.picture: {
                 if(delaystate == 0){
+                    MediaActionSound mediaActionSound = new MediaActionSound();
+                    mediaActionSound.play(0);
                     takePicture();
                 }else{
 
@@ -1193,7 +1258,6 @@ public class Camera2BasicFragment extends Fragment
                     btn_delay_layout.setVisibility(View.INVISIBLE);
                 }
 
-
                 break;
             case R.id.btn_delay3:
 
@@ -1202,19 +1266,60 @@ public class Camera2BasicFragment extends Fragment
                 btn_delay_setting.setText("3");
                 mDelayTime = 3 * 1000;
                 break;
-            case R.id.btn_delay5:
 
+            case R.id.btn_delay5:
                 btn_delay_layout.setVisibility(View.INVISIBLE);
                 Toast.makeText(activity,"已选中5秒延时" ,Toast.LENGTH_SHORT).show();
                 btn_delay_setting.setText("5");
                 mDelayTime = 5 * 1000;
                 break;
+
             case R.id.btn_delay10:
                 btn_delay_layout.setVisibility(View.INVISIBLE);
                 Toast.makeText(activity,"已选中10秒延时" ,Toast.LENGTH_SHORT).show();
                 btn_delay_setting.setText("10");
                 mDelayTime = 10 * 1000;
                 break;
+            case R.id.btn_change_preview:
+                System.out.println("btn_change_preview");
+                if(changePreview == 0){
+                    changePreview = 1;
+                    btn_Paint.setVisibility(View.VISIBLE);
+                }else{
+                     changePreview= 0;
+                    btn_Paint.setVisibility(View.INVISIBLE);
+                }
+                break;
+
+            case R.id.btn_Paint_1:
+                btn_Paint.setVisibility(View.INVISIBLE);
+                btn_change_preview.setText("1:1");
+                PaintFlag = "1:1";
+                stopPreview();
+                closeCamera();
+                openCamera();
+                break;
+
+            case R.id.btn_Paint_4:
+                btn_Paint.setVisibility(View.INVISIBLE);
+                btn_change_preview.setText("4:3");
+                PaintFlag = "4:3";
+                stopPreview();
+                closeCamera();
+                openCamera();
+                break;
+
+            case R.id.btn_Paint_16:
+                btn_Paint.setVisibility(View.INVISIBLE);
+                btn_change_preview.setText("full");
+                PaintFlag = "18:9";
+                stopPreview();
+                closeCamera();
+                openCamera();
+                break;
+
+
+
         }
     }
 

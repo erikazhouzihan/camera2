@@ -700,6 +700,11 @@ id barrier
 id beginning
 id blocking
 id bottom
+id btn_Paint
+id btn_Paint_1
+id btn_Paint_16
+id btn_Paint_4
+id btn_change_preview
 id btn_delay
 id btn_delay10
 id btn_delay3

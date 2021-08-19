@@ -17,9 +17,7 @@
 package com.example.android.camera2basic;
 
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.TextureView;
 
@@ -48,41 +46,41 @@ public class AutoFitTextureView extends TextureView {
         super(context, attrs, defStyle);
     }
     private void init(Context context) {
-        setSurfaceTextureListener(mSurfaceTextureListener);
+//        setSurfaceTextureListener(mSurfaceTextureListener);
         camera2BasicFragment = Camera2BasicFragment.newInstance();
     }
-    private SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            Log.v(TAG, "onSurfaceTextureAvailable. width: " + width + ", height: " + height);
-            camera2BasicFragment.openCamera(width, height);
-            //camera2BasicFragment.setPreviewSurface(surface);
-            // resize TextureView
-            int previewWidth = camera2BasicFragment.getPreviewSize().getWidth();
-            int previewHeight = camera2BasicFragment.getPreviewSize().getHeight();
-            if (width > height) {
-                setAspectRatio(previewWidth, previewHeight);
-            } else {
-                setAspectRatio(previewHeight, previewWidth);
-            }
-        }
-
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            Log.v(TAG, "onSurfaceTextureSizeChanged. width: " + width + ", height: " + height);
-        }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            Log.v(TAG, "onSurfaceTextureDestroyed");
-            camera2BasicFragment.closeCamera();
-            return false;
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        }
-    };
+//    private SurfaceTextureListener mSurfaceTextureListener = new SurfaceTextureListener() {
+//        @Override
+//        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+//            Log.v(TAG, "onSurfaceTextureAvailable. width: " + width + ", height: " + height);
+//            camera2BasicFragment.openCamera();
+//            //camera2BasicFragment.setPreviewSurface(surface);
+//            // resize TextureView
+//            int previewWidth = camera2BasicFragment.getPreviewSize().getWidth();
+//            int previewHeight = camera2BasicFragment.getPreviewSize().getHeight();
+//            if (width > height) {
+//                setAspectRatio(previewWidth, previewHeight);
+//            } else {
+//                setAspectRatio(previewHeight, previewWidth);
+//            }
+//        }
+//
+//        @Override
+//        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+//            Log.v(TAG, "onSurfaceTextureSizeChanged. width: " + width + ", height: " + height);
+//        }
+//
+//        @Override
+//        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+//            Log.v(TAG, "onSurfaceTextureDestroyed");
+//            camera2BasicFragment.closeCamera();
+//            return false;
+//        }
+//
+//        @Override
+//        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+//        }
+//    };
     /**
      * Sets the aspect ratio for this view. The size of the view will be measured based on the ratio
      * calculated from the parameters. Note that the actual sizes of parameters don't matter, that
@@ -98,6 +96,7 @@ public class AutoFitTextureView extends TextureView {
         mRatioWidth = width;
         mRatioHeight = height;
         requestLayout();
+
     }
 
     @Override
@@ -108,10 +107,10 @@ public class AutoFitTextureView extends TextureView {
         if (0 == mRatioWidth || 0 == mRatioHeight) {
             setMeasuredDimension(width, height);
         } else {
-            if (width < height * mRatioWidth / mRatioHeight) {
-                setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
+            if (width < height * (float)mRatioWidth / (float) mRatioHeight) {
+                setMeasuredDimension(width, (int) (width * (float)mRatioHeight / (float) mRatioWidth));
             } else {
-                setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
+                setMeasuredDimension((int) (height * (float)mRatioWidth / (float) mRatioHeight), height);
             }
         }
     }
