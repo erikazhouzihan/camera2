@@ -700,11 +700,14 @@ id barrier
 id beginning
 id blocking
 id bottom
+id btn_480p
+id btn_720p
 id btn_Paint
 id btn_Paint_1
 id btn_Paint_16
 id btn_Paint_4
 id btn_change_preview
+id btn_change_quality
 id btn_delay
 id btn_delay10
 id btn_delay3
@@ -712,6 +715,8 @@ id btn_delay5
 id btn_delay_layout
 id btn_delay_setting
 id btn_head
+id btn_quality
+id btn_quality_setting
 id btn_switch
 id btn_takePhoto
 id btn_video

@@ -30,43 +30,31 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
+
+import com.hjq.toast.ToastUtils;
 
 
 public class CameraActivity extends AppCompatActivity {
     //定义两个fragment
-    FragmentManager fm ;
+    FragmentManager fm;
     FragmentTransaction ft;
     Fragment mCurrentFragment;
     private static final String TAG = "camera2Activity";
 
-    private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
+    private static final int REQUEST_CODE = 1024;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestPermission();
         setContentView(R.layout.activity_camera);
-//        button = (Button) findViewById(R.id.button);
-//        button.setOnClickListener((View.OnClickListener) this);
-//        fm = getSupportFragmentManager();
-
-//        fm = getSupportFragmentManager();
-//        Log.i(TAG, "fm=================_1" + getSupportFragmentManager());
-//        ft = fm.beginTransaction();
-//        Camera2BasicFragment camera2BasicFragment = Camera2BasicFragment.newInstance();
-//        Camera2VideoFragment camera2VideoFragment = Camera2VideoFragment.newInstance();
-//        if (null == savedInstanceState) {
-//            Log.i(TAG, "onRequestPermissionsResult: 添加Fragment");
-//
-//            ft.add(R.id.container, camera2BasicFragment, "Camera2BasicFragment")
-//                    .add(R.id.container, camera2VideoFragment, "Camera2VideoFragment").hide(camera2VideoFragment)
-//                    .commit();
-
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, Camera2BasicFragment.newInstance())
-                    .commit();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, Camera2BasicFragment.newInstance())
+                .commit();
 
     }
 
@@ -78,111 +66,41 @@ public class CameraActivity extends AppCompatActivity {
         transaction.replace(R.id.container, fragment);
         transaction.commit();
 
-        System.out.println("fm=================_2"+ fm);
-//        fm.executePendingTransactions();
-//        String currentFragmentTag = fm.getBackStackEntryAt(fm.getBackStackEntryCount()-1).getName();
-//        System.out.println("currentFragmentTag============="+fm.getBackStackEntryAt(fm.getBackStackEntryCount()-1).getName() );
-//        Fragment from = fm.findFragmentByTag(fromTag);
-//        Fragment to = fm.findFragmentByTag(toTag);
-//        if (mCurrentFragment != to) {
-//            mCurrentFragment = to;
-//            FragmentTransaction transaction = fm.beginTransaction();
-//            if (!to.isAdded()) {//判断是否被添加到了Activity里面去了
-//                Log.i(TAG, "switchFragment: 11111111111");
-//                transaction.hide(from).add(R.id.container,to).commit();
-//            } else {
-//                Log.i(TAG, "switchFragment: from = " + from + "\n to = " + to);
-//                transaction.hide(from).show(to).commit();
-//            }
-//        }
-    }
-    //定义模式切换按钮
-//        ImageButton switchbutton = (ImageButton)findViewById(R.id.switchbutton);
-//        switchbutton.setOnClickListener(new ImageButtonListener());
-//    }
-//
-//      class ImageButtonListener implements View.OnClickListener{
-//
-//        @Override
-//        public void onClick(View v){
-//            getSupportFragmentManager().beginTransaction()
-//                    .replace(R.id.container, Camera2VideoFragment.newInstance())
-//                    .commit();
-//        }
-//    }
-//
-//    private void initFragment1(){
-//        //开启事务，fragment的控制是由事务来实现的
-//        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//
-//        if(fb == null){
-//            fb = new Camera2BasicFragment();
-//
-//        }
-//        //隐藏所有fragment
-//        hideFragment(transaction);
-//        //显示需要显示的fragment
-//        transaction.show(fb);
-//        transaction.commit();
-//    }
-//    private void initFragment2(){
-//        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//
-//        if(fv == null){
-//            fv = new Camera2VideoFragment();
-//            transaction.add(R.id.container, fv);
-//        }
-//        hideFragment(transaction);
-//        transaction.show(fv);
-//
-//        transaction.commit();
-//    }
-//    private void hideFragment(FragmentTransaction transaction){
-//        if(fb != null){
-//            transaction.hide(fb);
-//        }
-//        if(fv != null){
-//            transaction.hide(fv);
-//        }
-//
-//    }
+        System.out.println("fm=================_2" + fm);
 
-//    public void onClick(View v) {//点击哪个按钮就显示哪个fragment;
-//        if(v == button){
-//            initFragment1();
-//        }else if(){
-//            initFragment2();
-//        }
-//    }
+    }
 
     private void requestPermission() {
-        // 当API大于 23 时，才动态申请权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(this, VIDEO_PERMISSIONS, VIDEO_PERMISSIONS_CODE);
+            // 先判断有没有权限
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
+            }
+        } else {
+
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case VIDEO_PERMISSIONS_CODE:
-                //权限请求失败
-                if (grantResults.length == VIDEO_PERMISSIONS.length) {
-                    for (int result : grantResults) {
-                        if (result != PackageManager.PERMISSION_GRANTED) {
-                            //弹出对话框引导用户去设置
-                            showDialog();
-                            Toast.makeText(this, "请求权限被拒绝", Toast.LENGTH_LONG).show();
-                            break;
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "已授权", Toast.LENGTH_LONG).show();
-                }
-                break;
+        if (requestCode == REQUEST_CODE) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                ToastUtils.show("存储权限获取失败");
+            }
         }
     }
+
+    /**
+     * 模拟文件写入
+     */
+
 
     //弹出提示框
     private void showDialog() {
@@ -213,5 +131,7 @@ public class CameraActivity extends AppCompatActivity {
         intent.setData(uri);
         startActivity(intent);
     }
+
+
 
 }

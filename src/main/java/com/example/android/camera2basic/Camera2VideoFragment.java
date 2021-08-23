@@ -61,6 +61,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -80,6 +81,14 @@ public class Camera2VideoFragment extends Fragment
     private CaptureRequest mPreviewRequest;
     private int mZoom = 0;
     public CameraCharacteristics characteristics;
+
+    //质量转换相关变量定义
+    private LinearLayout btn_change_quality;
+    private LinearLayout btn_quality_setting;
+    private Button btn_quality;
+    private int qualityState = 0;
+    private static String VideoFlag = "720P";
+
     private static final Camera2VideoFragment camera2VideoFragment = new Camera2VideoFragment();
     //传感器方向默认度数
     private static final int SENSOR_ORIENTATION_DEFAULT_DEGREES = 90;
@@ -190,7 +199,7 @@ public class Camera2VideoFragment extends Fragment
     /**
      * Whether the app is recording video now
      */
-    private boolean mIsRecordingVideo;
+    private boolean mIsRecordingVideo = false;
 
     /**
      * An additional thread for running tasks that shouldn't block the UI.
@@ -215,6 +224,7 @@ public class Camera2VideoFragment extends Fragment
 
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
+            System.out.println("mCameraDevice"+mCameraDevice);
             mCameraDevice = cameraDevice;
             startPreview();
             mCameraOpenCloseLock.release();
@@ -259,7 +269,12 @@ public class Camera2VideoFragment extends Fragment
      */
     private static Size chooseVideoSize(Size[] choices) {
         for (Size size : choices) {
-            if (size.getWidth() == size.getHeight() * 4 / 3 && size.getWidth() <= 1080) {
+            if(VideoFlag == "720P" && size.getWidth() == size.getHeight() * 16 / 9 && size.getHeight() == 720){
+                System.out.println("size0"+size);
+                    return size;
+            }
+            else if (size.getHeight() == 480) {
+                System.out.println("size1"+size);
                 return size;
             }
         }
@@ -317,6 +332,13 @@ public class Camera2VideoFragment extends Fragment
         mTextureView = (AutoFitTextureView1) view.findViewById(R.id.videoView);
         mButtonVideo = (Button) view.findViewById(R.id.btn_video);
         mButtonVideo.setOnClickListener(this);
+        //质量转换
+        btn_change_quality = view.findViewById(R.id.btn_change_quality);
+        btn_quality_setting = view.findViewById(R.id.btn_quality_setting);
+        btn_quality = view.findViewById(R.id.btn_quality);
+        btn_quality.setOnClickListener(this);
+        view.findViewById(R.id.btn_480p).setOnClickListener(this);
+        view.findViewById(R.id.btn_720p).setOnClickListener(this);
 
         view.findViewById(R.id.to_take_photo).setOnClickListener(this);
         timer = view.findViewById(R.id.timer);
@@ -363,11 +385,15 @@ public class Camera2VideoFragment extends Fragment
         switch (view.getId()) {
             case R.id.btn_video: {
                 if (mIsRecordingVideo) {
+                    mIsRecordingVideo = false;
+                    System.out.println("結束錄製");
                     mButtonVideo.setText("开始录制");
                     timer.setBase(SystemClock.elapsedRealtime());//计时器清零
                     timer.stop();
                     stopRecordingVideo();
                 } else {
+                    mIsRecordingVideo = true;
+                    System.out.println("開始錄製");
                     mButtonVideo.setText("停止录制");
                     timer.setBase(SystemClock.elapsedRealtime());//计时器清零
                     timer.start();
@@ -386,7 +412,28 @@ public class Camera2VideoFragment extends Fragment
                 ((CameraActivity) activity).switchFragment(Camera2BasicFragment.newInstance());
                 break;
             }
-
+            case R.id.btn_quality:
+                if(qualityState == 0){
+                    System.out.println("btn_quality"+qualityState);
+                    qualityState = 1;
+                    btn_quality_setting.setVisibility(View.VISIBLE);
+                }else {
+                    qualityState = 0;
+                    btn_quality_setting.setVisibility(view.INVISIBLE);
+                }
+                break;
+            case R.id.btn_480p:
+                btn_quality_setting.setVisibility(View.INVISIBLE);
+                VideoFlag = "480P";
+                btn_quality.setText("480P");
+                Reopen();
+                break;
+            case R.id.btn_720p:
+                btn_quality_setting.setVisibility(View.INVISIBLE);
+                VideoFlag = "720P";
+                btn_quality.setText("720P");
+                Reopen();
+                break;
         }
     }
     private void switchCamera() {
@@ -399,10 +446,8 @@ public class Camera2VideoFragment extends Fragment
             mCameraId = "0";
         }
         System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++=");
-        stopPreview();
-        closeCamera();
+        Reopen();
 
-        openCamera(mTextureView.getWidth(), mTextureView.getHeight());
 
     }
 
@@ -444,10 +489,7 @@ public class Camera2VideoFragment extends Fragment
      */
     @SuppressWarnings("MissingPermission")
     public void openCamera(int width, int height) {
-//        if (!hasPermissionsGranted(VIDEO_PERMISSIONS)) {
-//            requestVideoPermissions();
-//            return;
-//        }
+
         final Activity activity = getActivity();
         if (null == activity || activity.isFinishing()) {
             return;
@@ -458,8 +500,6 @@ public class Camera2VideoFragment extends Fragment
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-//            String cameraId = manager.getCameraIdList()[0];
-
             // Choose the sizes for camera preview and video recording
             characteristics = manager.getCameraCharacteristics(mCameraId);
             StreamConfigurationMap map = characteristics
@@ -469,16 +509,17 @@ public class Camera2VideoFragment extends Fragment
                 throw new RuntimeException("Cannot get available preview/video sizes");
             }
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
-            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                    width, height, mVideoSize);
-
+            System.out.println("mVideoSize"+mVideoSize);
+            mPreviewSize = mVideoSize;
+            System.out.println("mPreviewSize"+mPreviewSize);
             int orientation = getResources().getConfiguration().orientation;
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             } else {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
-            configureTransform(width, height);
+            System.out.println("mTextureView"+mTextureView.getWidth()+mTextureView.getHeight());
+//            configureTransform(width, height);
             mMediaRecorder = new MediaRecorder();
             manager.openCamera(mCameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
@@ -570,6 +611,7 @@ public class Camera2VideoFragment extends Fragment
             return;
         }
         try {
+            System.out.println("走到updatePreview中来了---------------------");
             setUpCaptureRequestBuilder(mPreviewBuilder);
             HandlerThread thread = new HandlerThread("CameraPreview");
             thread.start();
@@ -577,8 +619,8 @@ public class Camera2VideoFragment extends Fragment
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
+//                    System.out.println("result= "+result);
 
-                    Log.e(TAG, "onCaptureCompleted: 22222" );
                 }
             }, mBackgroundHandler);
         } catch (CameraAccessException e) {
@@ -620,7 +662,7 @@ public class Camera2VideoFragment extends Fragment
         }
         mTextureView.setTransform(matrix);
     }
-
+    //设置时拍出来的视频的各种参数
     private void setUpMediaRecorder() throws IOException {
         final Activity activity = getActivity();
         if (null == activity) {
@@ -646,6 +688,7 @@ public class Camera2VideoFragment extends Fragment
         mMediaRecorder.setVideoEncodingBitRate(10000000);
         //每秒30帧
         mMediaRecorder.setVideoFrameRate(30);
+        System.out.println("mVideoSize.getWidth(), mVideoSize.getHeight()"+mVideoSize.getWidth()+mVideoSize.getHeight());
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -672,7 +715,8 @@ public class Camera2VideoFragment extends Fragment
             return;
         }
         try {
-            closePreviewSession();
+            System.out.println("到了startRecordingVideo中了");
+//            closePreviewSession();
             setUpMediaRecorder();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
@@ -698,17 +742,18 @@ public class Camera2VideoFragment extends Fragment
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
                     mPreviewSession = cameraCaptureSession;
                     updatePreview();
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // UI
-                            mButtonVideo.setText(R.string.stop);
-                            mIsRecordingVideo = true;
-
-                            // Start recording
-                            mMediaRecorder.start();
-                        }
-                    });
+//                    getActivity().runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            // UI
+//                            mButtonVideo.setText(R.string.stop);
+//
+//                            // Start recording
+//                            System.out.println("到了mMediaRecorder");
+//
+//                        }
+//                    });
+                    mMediaRecorder.start();
                 }
 
                 @Override
@@ -734,8 +779,8 @@ public class Camera2VideoFragment extends Fragment
 
     private void stopRecordingVideo() {
         // UI
-        mIsRecordingVideo = false;
-        mButtonVideo.setText("开始录制");
+
+
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();
@@ -745,6 +790,7 @@ public class Camera2VideoFragment extends Fragment
             Toast.makeText(activity, "已存入系统相册",
                     Toast.LENGTH_SHORT).show();
             Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
+            mButtonVideo.setText("开始录制");
         }
         mNextVideoAbsolutePath = null;
         startPreview();
@@ -875,5 +921,9 @@ public class Camera2VideoFragment extends Fragment
         }
 
     };
-
+    public void Reopen(){
+        stopPreview();
+        closeCamera();
+        openCamera(mTextureView.getWidth(), mTextureView.getHeight());
+    }
 }
