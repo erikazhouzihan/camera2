@@ -423,16 +423,24 @@ public class Camera2VideoFragment extends Fragment
                 }
                 break;
             case R.id.btn_480p:
-                btn_quality_setting.setVisibility(View.INVISIBLE);
-                VideoFlag = "480P";
-                btn_quality.setText("480P");
-                Reopen();
+                if(VideoFlag == "480P"){
+                    btn_quality_setting.setVisibility(View.INVISIBLE);
+                }else{
+                    btn_quality_setting.setVisibility(View.INVISIBLE);
+                    VideoFlag = "480P";
+                    btn_quality.setText("480P");
+                    Reopen();
+                }
                 break;
             case R.id.btn_720p:
-                btn_quality_setting.setVisibility(View.INVISIBLE);
-                VideoFlag = "720P";
-                btn_quality.setText("720P");
-                Reopen();
+                if(VideoFlag == "720P"){
+                    btn_quality_setting.setVisibility(View.INVISIBLE);
+                }else{
+                    btn_quality_setting.setVisibility(View.INVISIBLE);
+                    VideoFlag = "720P";
+                    btn_quality.setText("720P");
+                    Reopen();
+                }
                 break;
         }
     }
@@ -502,8 +510,7 @@ public class Camera2VideoFragment extends Fragment
             }
             // Choose the sizes for camera preview and video recording
             characteristics = manager.getCameraCharacteristics(mCameraId);
-            StreamConfigurationMap map = characteristics
-                    .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
             if (map == null) {
                 throw new RuntimeException("Cannot get available preview/video sizes");
@@ -558,11 +565,14 @@ public class Camera2VideoFragment extends Fragment
      * Start the camera preview.
      */
     private void startPreview() {
+        System.out.println("startPreview方法执行了");
         if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
             return;
         }
         try {
             closePreviewSession();
+            System.out.println("mPreviewSize"+mPreviewSize.getWidth()+mPreviewSize.getHeight());
+            System.out.println("mTextureView"+mTextureView.getWidth()+mTextureView.getHeight());
             texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
