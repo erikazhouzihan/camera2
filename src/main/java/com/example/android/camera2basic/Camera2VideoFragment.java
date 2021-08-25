@@ -932,8 +932,10 @@ public class Camera2VideoFragment extends Fragment
 
     };
     public void Reopen(){
+        System.out.println("Reopen方法调用了");
         stopPreview();
         closeCamera();
+        Log.i(TAG, "Reopen: " + mTextureView.getWidth() + "X" + mTextureView.getHeight());
         openCamera(mTextureView.getWidth(), mTextureView.getHeight());
     }
 }

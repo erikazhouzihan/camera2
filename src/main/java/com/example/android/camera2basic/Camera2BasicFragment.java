@@ -129,6 +129,9 @@ public class Camera2BasicFragment extends Fragment
     public String mCameraId = "0";
     String PaintFlag = "4:3";
     SurfaceTexture texture;
+    private Bitmap selectdBitmap;
+    private  int REQUEST_GET_IMAGE = 1;
+    private  int MAX_SIZE = 769;
     //设置两套角度，用于前置和后置摄像头拍照
     private void Orientations() {
         //前置时，照片竖直显示
@@ -208,7 +211,10 @@ public class Camera2BasicFragment extends Fragment
 //            configureTransform(width, height);
             Log.e(TAG, "onSurfaceTextureSizeChanged: " + width + "X"+height );
             mTextureView.setAspectRatio(mPreviewSize.getWidth(),mPreviewSize.getHeight());
-
+//            if(isNeedRatio){
+//                isNeedRatio = false;
+//                Reopen();
+//            }
 
         }
 
@@ -263,6 +269,11 @@ public class Camera2BasicFragment extends Fragment
             System.out.println("onOpened方法调用了");
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraDevice = cameraDevice;
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             createCameraPreviewSession();
             mCameraOpenCloseLock.release();
 
@@ -391,7 +402,7 @@ public class Camera2BasicFragment extends Fragment
             switch (mState) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
-                    startPreview();
+//                    startPreview();
                     break;
                 }
                 //等待对焦锁定
@@ -401,6 +412,7 @@ public class Camera2BasicFragment extends Fragment
                     if(mCameraId.equals("1")){
                         mState = STATE_PICTURE_TAKEN;
                         captureStillPicture();
+                        startPreview();
                     }
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
                     Log.e(TAG, "process: " + afState );
@@ -416,6 +428,7 @@ public class Camera2BasicFragment extends Fragment
                             int d = 0;
                             d = d + 1;
                             captureStillPicture();
+                            startPreview();
                         } else {
                             runPrecaptureSequence();
                         }
@@ -457,7 +470,6 @@ public class Camera2BasicFragment extends Fragment
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
 
-//            Log.e(TAG, "onCaptureCompleted: 11111" );
             process(result);
         }
 
@@ -552,7 +564,7 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        requestPermission();
+//        requestPermission();
         System.out.println("onCreateView方法调用了====================");
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
@@ -567,6 +579,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.exchangeCamera2).setOnClickListener(this);
         view.findViewById(R.id.to_recorder).setOnClickListener(this);
         imageView = view.findViewById(R.id.image);
+        imageView.setOnClickListener(this);
         //延迟
         btn_delay_setting = view.findViewById(R.id.btn_delay_setting);
         btn_delay_setting.setOnClickListener(this);
@@ -600,10 +613,19 @@ public class Camera2BasicFragment extends Fragment
         super.onActivityCreated(savedInstanceState);
 
     }
-
+    private float ratio4_3 = (float) 4 / 3;
+    private float ratio1_1 = (float) 1 / 1;
+    private float ratio16_9 = (float) 18 / 9;
     @Override
     public void onResume() {
         super.onResume();
+        try {
+            setOrientations();
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        PaintFlag = "4:3";
         System.out.println("onResume方法调用了====================");
         startBackgroundThread();
 //        closeCamera();
@@ -613,10 +635,16 @@ public class Camera2BasicFragment extends Fragment
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
         //当屏幕关闭并重新打开时，SurfaceTexture已经可用，并且不会调用“onSurfaceTextureAvailable”。在这种情况下，我们可以打开一个相机并从这里开始预览（否则，我们会等到 Surface 在SurfaceTextureListener 中准备好）。
+        mPreviewSize = findBestPreviewSize(ratio4_3);
+        Log.e(TAG, "onResume: " + mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight() );
+        mTextureView.setAspectRatio(mPreviewSize.getWidth(),mPreviewSize.getHeight());
+
         if (mTextureView.isAvailable()) {
+            Log.e(TAG, "onResume:__1 " );
             btn_change_preview.setText(PaintFlag);
             openCamera(mTextureView.getWidth(),mTextureView.getHeight());
         } else {
+            Log.e(TAG, "onResume:__2 " );
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
     }
@@ -628,6 +656,7 @@ public class Camera2BasicFragment extends Fragment
 //        stopPreview();
 //        startPreview();
         super.onPause();
+        PaintFlag = "4:3";
     }
     @Override
     public void onDestroyView() {
@@ -667,12 +696,13 @@ public class Camera2BasicFragment extends Fragment
         try {
                 characteristics = manager.getCameraCharacteristics(mCameraId);
                 StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+                mPreviewSize = chooseImageSize(map.getOutputSizes(ImageReader.class));
                 mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 if (map == null) {
                     throw new RuntimeException("Cannot get available preview/video sizes");
                 }
-                mPreviewSize = chooseImageSize(map.getOutputSizes(ImageReader.class));
-                System.out.println("mPreviewSize"+mPreviewSize.getWidth()+mPreviewSize.getHeight());
+            Log.e(TAG, "setUpCameraOutputs: "+ mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight());
                 int orientation = getResources().getConfiguration().orientation;
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     mTextureView.setAspectRatio(mPreviewSize.getWidth(),mPreviewSize.getHeight());
@@ -727,7 +757,7 @@ public class Camera2BasicFragment extends Fragment
             requestCameraPermission();
             return;
         }
-        setUpCameraOutputs();
+//        setUpCameraOutputs();
 //        configureTransform(width, height);
 
         try {
@@ -745,6 +775,59 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
+
+    private Size findBestPreviewSize(float ratio) {
+        //configure surfaces
+
+        int mPreviewWidth = 0;
+        int mPreviewHeight = 0;
+        try {
+            characteristics = mCameraManager.getCameraCharacteristics(mCameraId);
+
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        if (characteristics != null) {
+            StreamConfigurationMap streamMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            Size[] supportSizes = streamMap.getOutputSizes(ImageFormat.JPEG);
+
+            float tolerant = 0.05f;
+            int fullScreenWidth = getActivity().getResources().getDisplayMetrics().widthPixels;
+            int fullScreenHeight = getActivity().getResources().getDisplayMetrics().heightPixels;
+            Log.i(TAG, "findBestPreviewSize : fullScreenWidth = " + fullScreenWidth + " fullScreenHeight = " + fullScreenHeight);
+            Size bestCaptureSize = new Size((int) (fullScreenWidth * ratio), fullScreenWidth);
+            float bestRatio = ratio;
+            for (Size size : supportSizes) {
+                if (Math.abs((float) size.getWidth() / size.getHeight() - ratio) < tolerant) {
+                    tolerant = Math.abs((float) size.getWidth() / size.getHeight() - ratio);
+                    bestCaptureSize = size;
+                    bestRatio = (float) size.getWidth() / size.getHeight();
+                }
+            }
+            Log.i(TAG, "bestCaptureSize = " + bestCaptureSize);
+            //capture surface
+            int mCaptureWidth = bestCaptureSize.getWidth();
+            int mCaptureHeight = bestCaptureSize.getHeight();
+            //init imageReader
+            mImageReader = ImageReader.newInstance(mCaptureWidth, mCaptureHeight, ImageFormat.JPEG, 1);
+            mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, mBackgroundHandler);
+
+            //preview surface
+            int previewHeight = fullScreenWidth - fullScreenWidth % (16 * 3);
+            int previewWidth = (int) (previewHeight * ratio);
+            if (previewWidth != mPreviewWidth || previewHeight != mPreviewHeight) {
+                mPreviewHeight = previewHeight;
+                mPreviewWidth = previewWidth;
+            }
+//            float RATIO_full = (float) 18.6 / 9;
+//            if (ratio == RATIO_full) {
+//                mPreviewWidth = fullScreenHeight;
+//                mPreviewHeight = fullScreenWidth;
+//            }
+        }
+        return new Size(mPreviewWidth, mPreviewHeight);
+    }
+
     /**
      * Closes the current {@link CameraDevice}.
      */
@@ -756,10 +839,10 @@ public class Camera2BasicFragment extends Fragment
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-            if (null != mImageReader) {
-                mImageReader.close();
-                mImageReader = null;
-            }
+//            if (null != mImageReader) {
+//                mImageReader.close();
+//                mImageReader = null;
+//            }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
@@ -800,11 +883,14 @@ public class Camera2BasicFragment extends Fragment
     private void createCameraPreviewSession() {
         System.out.println("createCameraPreviewSession()方法调用了");
         try {
-            closePreviewSession();
+//            closePreviewSession();
             System.out.println("mTextureView"+mTextureView.getWidth()+mTextureView.getHeight());
             texture = mTextureView.getSurfaceTexture();
+
+
             assert texture != null;
             // 我们将默认缓冲区的大小配置为我们想要的相机预览的大小。
+            Log.e(TAG, "Default_buffer_size = " + mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight());
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
             // 这是我们需要开始预览的输出 Surface。
             Surface surface = new Surface(texture);
@@ -812,6 +898,7 @@ public class Camera2BasicFragment extends Fragment
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
             //在这里，我们为相机预览创建了一个 CameraCaptureSession。
+            Log.e(TAG, "createCameraPreviewSession: " + mImageReader + "__" + mCameraDevice);
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
                         @Override
@@ -828,7 +915,7 @@ public class Camera2BasicFragment extends Fragment
 //                            } catch (CameraAccessException e) {
 //                                e.printStackTrace();
 //                            }
-                            mPreviewRequest = mPreviewRequestBuilder.build();
+//                            mPreviewRequest = mPreviewRequestBuilder.build();
                             startPreview();
                         }
                         @Override
@@ -906,7 +993,6 @@ public class Camera2BasicFragment extends Fragment
     private void lockFocus() {
         System.out.println("lockFocus方法调用了");
         try {
-            System.out.println("lockFocus出来了");
             // This is how to tell the camera to lock focus.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
@@ -1082,45 +1168,49 @@ public class Camera2BasicFragment extends Fragment
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.picture: {
-                if(delaystate == 0){
-                    MediaActionSound mediaActionSound = new MediaActionSound();
-                    mediaActionSound.play(0);
-                    takePicture();
-                }else{
+                    if(delaystate == 0){
+                        MediaActionSound mediaActionSound = new MediaActionSound();
+                        mediaActionSound.play(0);
+                        takePicture();
+                    }else{
 
-                        new CountDownTimer(mDelayTime, TIME_INTERVAL) {
-                            MediaActionSound mediaActionSound = new MediaActionSound();
-//                          mediaActionSound.load(0);
-                            @Override
-                            public void onTick(long millisUntilFinished) {
-                                mTimeText.setVisibility(View.VISIBLE);
-                                mTimeText.setText("" + (millisUntilFinished +1000)/ TIME_INTERVAL);
-                                if((millisUntilFinished+1000)/TIME_INTERVAL<= 3){
-                                    mediaActionSound.play(0);
+                            new CountDownTimer(mDelayTime, TIME_INTERVAL) {
+                                MediaActionSound mediaActionSound = new MediaActionSound();
+    //                          mediaActionSound.load(0);
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+                                    mTimeText.setVisibility(View.VISIBLE);
+                                    mTimeText.setText("" + (millisUntilFinished +1000)/ TIME_INTERVAL);
+                                    if((millisUntilFinished+1000)/TIME_INTERVAL<= 3){
+                                        mediaActionSound.play(0);
+                                    }
+
                                 }
 
-                            }
+                                @Override
+                                public void onFinish() {
+                                    mTimeText.setVisibility(View.GONE);
+                                    takePicture();
+                                }
+                            }.start();
 
-                            @Override
-                            public void onFinish() {
-                                mTimeText.setVisibility(View.GONE);
-                                takePicture();
-                            }
-                        }.start();
-
-                }
+                    }
+                    break;
+            }
+            case R.id.image:{
+                selectImage();
                 break;
             }
             case R.id.exchangeCamera2: {
-//                Activity activity = getActivity();
-                switchCamera();
-                break;
+    //                Activity activity = getActivity();
+                    switchCamera();
+                    break;
             }
             case R.id.to_recorder: {
-//                isFirstStart = false;
-                ((CameraActivity)activity).switchFragment(Camera2VideoFragment.newInstance());
-
-                break;
+    //                isFirstStart = false;
+                    ((CameraActivity)activity).switchFragment(Camera2VideoFragment.newInstance());
+                    PaintFlag = "4:3";
+                    break;
             }
             case R.id.btn_delay:
                 if (isDelay){
@@ -1149,56 +1239,81 @@ public class Camera2BasicFragment extends Fragment
 
                 break;
             case R.id.btn_delay3:
-
-                btn_delay_layout.setVisibility(View.INVISIBLE);
-                Toast.makeText(activity,"已选中3秒延时" ,Toast.LENGTH_SHORT).show();
-                btn_delay_setting.setText("3");
-                mDelayTime = 3 * 1000;
-                break;
-
+                    btn_delay_layout.setVisibility(View.INVISIBLE);
+                    Toast.makeText(activity,"已选中3秒延时" ,Toast.LENGTH_SHORT).show();
+                    btn_delay_setting.setText("3");
+                    mDelayTime = 3 * 1000;
+                    break;
             case R.id.btn_delay5:
-                btn_delay_layout.setVisibility(View.INVISIBLE);
-                Toast.makeText(activity,"已选中5秒延时" ,Toast.LENGTH_SHORT).show();
-                btn_delay_setting.setText("5");
-                mDelayTime = 5 * 1000;
-                break;
-
+                    btn_delay_layout.setVisibility(View.INVISIBLE);
+                    Toast.makeText(activity,"已选中5秒延时" ,Toast.LENGTH_SHORT).show();
+                    btn_delay_setting.setText("5");
+                    mDelayTime = 5 * 1000;
+                    break;
             case R.id.btn_delay10:
-                btn_delay_layout.setVisibility(View.INVISIBLE);
-                Toast.makeText(activity,"已选中10秒延时" ,Toast.LENGTH_SHORT).show();
-                btn_delay_setting.setText("10");
-                mDelayTime = 10 * 1000;
-                break;
+                    btn_delay_layout.setVisibility(View.INVISIBLE);
+                    Toast.makeText(activity,"已选中10秒延时" ,Toast.LENGTH_SHORT).show();
+                    btn_delay_setting.setText("10");
+                    mDelayTime = 10 * 1000;
+                    break;
             case R.id.btn_change_preview:
-                System.out.println("btn_change_preview");
-                if(changePreview == 0){
-                    changePreview = 1;
-                    btn_Paint.setVisibility(View.VISIBLE);
-                }else{
-                     changePreview= 0;
-                    btn_Paint.setVisibility(View.INVISIBLE);
-                }
-                break;
-
+                    System.out.println("btn_change_preview");
+                    if(changePreview == 0){
+                        changePreview = 1;
+                        btn_Paint.setVisibility(View.VISIBLE);
+                    }else{
+                         changePreview= 0;
+                        btn_Paint.setVisibility(View.INVISIBLE);
+                    }
+                    break;
             case R.id.btn_Paint_1:
                     btn_Paint.setVisibility(View.INVISIBLE);
                     btn_change_preview.setText("1:1");
                     PaintFlag = "1:1";
-                    Reopen();
+                try {
+                    handleRatioChange(ratio1_1);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+                Reopen();
                     break;
             case R.id.btn_Paint_4:
                     btn_Paint.setVisibility(View.INVISIBLE);
                     btn_change_preview.setText("4:3");
                     PaintFlag = "4:3";
-                    Reopen();
+                try {
+                    handleRatioChange(ratio4_3);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+                Reopen();
                     break;
             case R.id.btn_Paint_16:
                     btn_Paint.setVisibility(View.INVISIBLE);
                     btn_change_preview.setText("full");
-                    PaintFlag = "18:9";
-                    Reopen();
+                    PaintFlag = "full";
+                try {
+                    handleRatioChange(ratio16_9);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+                Reopen();
                     break;
         }
+    }
+    private boolean isNeedRatio = false;
+    private void handleRatioChange(float ratio) throws CameraAccessException {
+        setOrientations();
+        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        if(PaintFlag == "1:1"){
+            mPreviewSize = chooseImageSize(map.getOutputSizes(ImageReader.class));
+        }else{
+            mPreviewSize = findBestPreviewSize(ratio);
+        }
+
+        Log.e(TAG, "handleRatioChange: " + mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight());
+        mTextureView.setAspectRatio(mPreviewSize.getWidth(),mPreviewSize.getHeight());
+        isNeedRatio = true;
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
@@ -1238,7 +1353,6 @@ public class Camera2BasicFragment extends Fragment
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-
                     imageView.setImageBitmap(bitmap);
                 }
             });
@@ -1307,16 +1421,16 @@ public class Camera2BasicFragment extends Fragment
         Bitmap bitmap = BitmapFactory.decodeByteArray(data,0,data.length);
         Bitmap calBitmap;
         Matrix rmatrix = new Matrix();
-//        Matrix nmatrix = new Matrix();
+        Matrix nmatrix = new Matrix();
 
         System.out.println("orientation+++++++++++++++++++++++++++++"+orientation);
         rmatrix.setRotate(orientation,bitmap.getWidth()/2,bitmap.getHeight()/2);
         calBitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),rmatrix,false);
 
-//        if(CurrentCamera.equals("1")){
-//            nmatrix.setScale(-1,1);
-//            calBitmap = Bitmap.createBitmap(calBitmap,0,0,calBitmap.getWidth(),calBitmap.getHeight(),rmatrix,false);
-//        }
+        if(CurrentCamera.equals("1")){
+            nmatrix.setScale(-1,1);
+            calBitmap = Bitmap.createBitmap(calBitmap,0,0,calBitmap.getWidth(),calBitmap.getHeight(),rmatrix,false);
+        }
         return calBitmap;
     }
 
@@ -1495,19 +1609,21 @@ public class Camera2BasicFragment extends Fragment
     }
 
     public void Reopen(){
+        System.out.println("Reopen方法调用了");
         stopPreview();
         closeCamera();
+        Log.i(TAG, "Reopen: " + mTextureView.getWidth() + "X" + mTextureView.getHeight());
         openCamera(mTextureView.getWidth(),mTextureView.getHeight());
     }
 
     public Size chooseImageSize(Size[] choices) {
-        System.out.println("chooseImageSize方法调用了");
+        System.out.println("chooseImageSize方法调用了" + choices);
         for(Size size : choices){
             if(PaintFlag == "1:1" && size.getWidth() == size.getHeight() * 1 / 1){
                 return size;
             }else if(PaintFlag == "4:3" && size.getWidth() == size.getHeight() * 4 / 3){
                 return size;
-            }else if(PaintFlag == "18:9" && size.getWidth() == size.getHeight() * 18 / 9){
+            }else if(PaintFlag == "full" && size.getWidth() == size.getHeight() * 18 / 9){
                 return size;
             }
         }
@@ -1519,6 +1635,17 @@ public class Camera2BasicFragment extends Fragment
             mCaptureSession.close();
             mCaptureSession = null;
         }
+    }
+    private void selectImage() {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setType("image/*");
+        getContext().startActivity(intent);
+    }
+
+    private void setOrientations() throws CameraAccessException {
+        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        characteristics = manager.getCameraCharacteristics(mCameraId);
+        mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
     }
 }
 

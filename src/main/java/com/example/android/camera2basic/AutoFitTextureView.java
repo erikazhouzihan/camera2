@@ -41,7 +41,7 @@ public class AutoFitTextureView extends TextureView {
 
     public AutoFitTextureView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
-        init(context);
+//        init(context);
     }
 
     public AutoFitTextureView(Context context, AttributeSet attrs, int defStyle) {
@@ -69,6 +69,7 @@ public class AutoFitTextureView extends TextureView {
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+            setAspectRatio(width,height);
             Log.v(TAG, "onSurfaceTextureSizeChanged. width: " + width + ", height: " + height);
         }
 
@@ -98,7 +99,6 @@ public class AutoFitTextureView extends TextureView {
         mRatioWidth = height;
         mRatioHeight = width;
         requestLayout();
-
     }
 
     @Override
