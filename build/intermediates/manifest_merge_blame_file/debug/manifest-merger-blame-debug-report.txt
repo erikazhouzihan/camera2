@@ -20,7 +20,7 @@
 20    <uses-sdk
 21        android:minSdkVersion="21"
 21-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml
-22        android:targetSdkVersion="30" />
+22        android:targetSdkVersion="27" />
 22-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml
 23
 24    <uses-permission android:name="android.permission.CAMERA" />
@@ -35,46 +35,43 @@
 27    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 27-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:24:5-81
 27-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:24:22-78
-28    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-28-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:25:5-82
-28-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:25:22-79
-29
-30    <uses-feature android:name="android.hardware.camera" />
-30-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:27:5-60
-30-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:27:19-57
-31    <uses-feature android:name="android.hardware.camera.autofocus" />
-31-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:28:5-70
-31-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:28:19-67
-32
-33    <application
-33-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:30:5-42:19
-34        android:allowBackup="true"
-34-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:30:18-44
-35        android:debuggable="true"
-36        android:icon="@drawable/ic_launcher"
-36-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:32:9-45
-37        android:label="@string/app_name"
-37-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:31:9-41
-38        android:testOnly="true"
-39        android:theme="@style/MaterialTheme" >
-39-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:33:9-45
-40        <activity
-40-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:35:9-41:20
-41            android:name="com.example.android.camera2basic.CameraActivity"
-41-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:35:19-49
-42            android:label="@string/app_name" >
-42-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:36:19-51
-43            <intent-filter>
-43-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:37:13-40:29
-44                <action android:name="android.intent.action.MAIN" />
-44-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:38:17-69
-44-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:38:25-66
-45
-46                <category android:name="android.intent.category.LAUNCHER" />
-46-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:39:17-77
-46-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:39:27-74
-47            </intent-filter>
-48        </activity>
-49    </application>
-50
-51</manifest>
+28
+29    <uses-feature android:name="android.hardware.camera" />
+29-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:26:5-60
+29-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:26:19-57
+30    <uses-feature android:name="android.hardware.camera.autofocus" />
+30-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:27:5-70
+30-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:27:19-67
+31
+32    <application
+32-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:29:5-41:19
+33        android:allowBackup="true"
+33-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:29:18-44
+34        android:debuggable="true"
+35        android:icon="@drawable/ic_launcher"
+35-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:31:9-45
+36        android:label="@string/app_name"
+36-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:30:9-41
+37        android:testOnly="true"
+38        android:theme="@style/MaterialTheme" >
+38-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:32:9-45
+39        <activity
+39-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:34:9-40:20
+40            android:name="com.example.android.camera2basic.CameraActivity"
+40-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:34:19-49
+41            android:label="@string/app_name" >
+41-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:35:19-51
+42            <intent-filter>
+42-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:36:13-39:29
+43                <action android:name="android.intent.action.MAIN" />
+43-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:37:17-69
+43-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:37:25-66
+44
+45                <category android:name="android.intent.category.LAUNCHER" />
+45-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:38:17-77
+45-->/home/zzh/ssd_disk/google_camerademo/android-Camera2Basic-master/Application/src/main/AndroidManifest.xml:38:27-74
+46            </intent-filter>
+47        </activity>
+48    </application>
+49
+50</manifest>

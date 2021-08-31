@@ -110,6 +110,5 @@
     <orderEntry type="library" name="Gradle: com.android.support:support-compat:27.0.2@aar" level="project" />
     <orderEntry type="library" name="Gradle: android.arch.lifecycle:runtime:1.0.3@aar" level="project" />
     <orderEntry type="library" name="Gradle: androidx.constraintlayout:constraintlayout:1.1.2@aar" level="project" />
-    <orderEntry type="library" name="Gradle: com.hjq:toast:8.6@aar" level="project" />
   </component>
 </module>

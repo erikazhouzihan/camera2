@@ -396,9 +396,6 @@ public class Camera2BasicFragment extends Fragment
             = new CameraCaptureSession.CaptureCallback() {
 
         private void process(CaptureResult result) {
-
-
-
             switch (mState) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
@@ -1305,10 +1302,11 @@ public class Camera2BasicFragment extends Fragment
     private void handleRatioChange(float ratio) throws CameraAccessException {
         setOrientations();
         StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        mPreviewSize = findBestPreviewSize(ratio);
         if(PaintFlag == "1:1"){
             mPreviewSize = chooseImageSize(map.getOutputSizes(ImageReader.class));
         }else{
-            mPreviewSize = findBestPreviewSize(ratio);
+
         }
 
         Log.e(TAG, "handleRatioChange: " + mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight());
@@ -1638,7 +1636,9 @@ public class Camera2BasicFragment extends Fragment
     }
     private void selectImage() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
+
         intent.setType("image/*");
+
         getContext().startActivity(intent);
     }
 

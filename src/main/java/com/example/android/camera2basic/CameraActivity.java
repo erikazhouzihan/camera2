@@ -30,10 +30,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-
-import com.hjq.toast.ToastUtils;
+import android.widget.Toast;
 
 
 public class CameraActivity extends AppCompatActivity {
@@ -43,9 +41,9 @@ public class CameraActivity extends AppCompatActivity {
     Fragment mCurrentFragment;
     private static final String TAG = "camera2Activity";
 
-    private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+    private static final String[] VIDEO_PERMISSIONS = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private static final int VIDEO_PERMISSIONS_CODE = 1;
-    private static final int REQUEST_CODE = 1024;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,41 +64,37 @@ public class CameraActivity extends AppCompatActivity {
         transaction.replace(R.id.container, fragment);
         transaction.commit();
 
-        System.out.println("fm=================_2" + fm);
 
     }
 
     private void requestPermission() {
+        // 当API大于 23 时，才动态申请权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // 先判断有没有权限
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
-            }
-        } else {
-
+            ActivityCompat.requestPermissions(this, VIDEO_PERMISSIONS, VIDEO_PERMISSIONS_CODE);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-
-            } else {
-                ToastUtils.show("存储权限获取失败");
-            }
+        switch (requestCode) {
+            case VIDEO_PERMISSIONS_CODE:
+                //权限请求失败
+                if (grantResults.length == VIDEO_PERMISSIONS.length) {
+                    for (int result : grantResults) {
+                        if (result != PackageManager.PERMISSION_GRANTED) {
+                            //弹出对话框引导用户去设置
+                            showDialog();
+                            Toast.makeText(this, "请求权限被拒绝", Toast.LENGTH_LONG).show();
+                            break;
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "已授权", Toast.LENGTH_LONG).show();
+                }
+                break;
         }
     }
-
-    /**
-     * 模拟文件写入
-     */
-
 
     //弹出提示框
     private void showDialog() {
@@ -131,7 +125,4 @@ public class CameraActivity extends AppCompatActivity {
         intent.setData(uri);
         startActivity(intent);
     }
-
-
-
 }

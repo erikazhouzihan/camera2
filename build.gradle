@@ -23,7 +23,7 @@ dependencies {
     compile "com.android.support:cardview-v7:27.0.2"
     compile "com.android.support:appcompat-v7:27.0.2"
     implementation 'androidx.constraintlayout:constraintlayout:1.1.2'
-    implementation 'com.hjq:toast:8.6'
+   
 }
 
 // The sample build uses multiple directories to
@@ -41,7 +41,7 @@ android {
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 27
     }
 
     compileOptions {
