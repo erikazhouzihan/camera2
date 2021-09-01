@@ -24,7 +24,6 @@ import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -49,7 +48,6 @@ import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Size;
@@ -317,6 +315,7 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        System.out.println("onCreateView方法执行了");
         return inflater.inflate(R.layout.fragment_camera2_video, container, false);
     }
 
@@ -324,6 +323,7 @@ public class Camera2VideoFragment extends Fragment
     public void onAttach(Context context) {
         Log.i(TAG, "onAttach: ");
         super.onAttach(context);
+        System.out.println("onAttach方法执行了");
         this.activity = (Activity) context;
     }
 
@@ -350,9 +350,9 @@ public class Camera2VideoFragment extends Fragment
     //判断TextureView是否可用，不可用就给TextureView设置监听，可用时才openCamera
     public void onResume() {
         super.onResume();
+        System.out.println("onResume执行了");
         startBackgroundThread();
         if (mTextureView.isAvailable()) {
-
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -361,14 +361,22 @@ public class Camera2VideoFragment extends Fragment
 
     @Override
     public void onPause() {
-//        closeCamera();
-//        stopBackgroundThread();
         super.onPause();
+        timer.setBase(SystemClock.elapsedRealtime());//计时器清零
+        timer.stop();
+        try{
+            mMediaRecorder.stop();
+        }catch (IllegalStateException e){
+            e.printStackTrace();
+        }
+        mIsRecordingVideo = false;
+        mButtonVideo.setText("开始录制");
+        System.out.println("onPause执行了");
     }
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        System.out.println("onDestroyView方法调用了=============mCameraDevice = null");
+        System.out.println("onDestroyView方法调用了");
         if (null != mCameraDevice) {
             mCameraDevice.close();
             mCameraDevice = null;
@@ -482,16 +490,6 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
-    private boolean hasPermissionsGranted(String[] permissions) {
-        for (String permission : permissions) {
-            if (ActivityCompat.checkSelfPermission(getActivity(), permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * Tries to open a {@link CameraDevice}. The result is listened by `mStateCallback`.
      */
@@ -516,9 +514,7 @@ public class Camera2VideoFragment extends Fragment
                 throw new RuntimeException("Cannot get available preview/video sizes");
             }
             mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
-            System.out.println("mVideoSize"+mVideoSize);
             mPreviewSize = mVideoSize;
-            System.out.println("mPreviewSize"+mPreviewSize);
             int orientation = getResources().getConfiguration().orientation;
             if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
@@ -532,11 +528,6 @@ public class Camera2VideoFragment extends Fragment
         } catch (CameraAccessException e) {
             Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
             activity.finish();
-//        } catch (NullPointerException e) {
-//            // Currently an NPE is thrown when the Camera2API is used but not supported on the
-//            // device this code runs.
-//            ErrorDialog.newInstance(getString(R.string.camera_error))
-//                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera opening.");
         }
@@ -788,13 +779,13 @@ public class Camera2VideoFragment extends Fragment
     }
 
     private void stopRecordingVideo() {
-        // UI
-
-
         // Stop recording
-        mMediaRecorder.stop();
+        try{
+            mMediaRecorder.stop();
+        }catch (IllegalStateException e){
+            e.printStackTrace();
+        }
         mMediaRecorder.reset();
-
         Activity activity = getActivity();
         if (null != activity) {
             Toast.makeText(activity, "已存入系统相册",
@@ -849,7 +840,6 @@ public class Camera2VideoFragment extends Fragment
     }
 
     public static class ConfirmationDialog extends DialogFragment {
-
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final android.app.Fragment parent = getParentFragment();
@@ -871,7 +861,6 @@ public class Camera2VideoFragment extends Fragment
                             })
                     .create();
         }
-
     }
     public void handleZoom(boolean isZoomIn) {
         System.out.println("handleZoom++++++++++++++++++++++");

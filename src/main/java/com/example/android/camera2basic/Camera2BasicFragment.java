@@ -49,13 +49,11 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaActionSound;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
@@ -625,15 +623,7 @@ public class Camera2BasicFragment extends Fragment
         PaintFlag = "4:3";
         System.out.println("onResume方法调用了====================");
         startBackgroundThread();
-//        closeCamera();
-
-        // When the screen is turned off and turned back on, the SurfaceTexture is already
-        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
-        // the SurfaceTextureListener).
-        //当屏幕关闭并重新打开时，SurfaceTexture已经可用，并且不会调用“onSurfaceTextureAvailable”。在这种情况下，我们可以打开一个相机并从这里开始预览（否则，我们会等到 Surface 在SurfaceTextureListener 中准备好）。
         mPreviewSize = findBestPreviewSize(ratio4_3);
-        Log.e(TAG, "onResume: " + mPreviewSize.getWidth() + "X" + mPreviewSize.getHeight() );
         mTextureView.setAspectRatio(mPreviewSize.getWidth(),mPreviewSize.getHeight());
 
         if (mTextureView.isAvailable()) {
@@ -649,9 +639,6 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onPause() {
         System.out.println("onPause方法调用了====================");
-        //closeCamera();
-//        stopPreview();
-//        startPreview();
         super.onPause();
         PaintFlag = "4:3";
     }
@@ -816,11 +803,6 @@ public class Camera2BasicFragment extends Fragment
                 mPreviewHeight = previewHeight;
                 mPreviewWidth = previewWidth;
             }
-//            float RATIO_full = (float) 18.6 / 9;
-//            if (ratio == RATIO_full) {
-//                mPreviewWidth = fullScreenHeight;
-//                mPreviewHeight = fullScreenWidth;
-//            }
         }
         return new Size(mPreviewWidth, mPreviewHeight);
     }
@@ -1150,7 +1132,6 @@ public class Camera2BasicFragment extends Fragment
     private void switchCamera() {
 
         Activity activity = getActivity();
-//        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         if (mCameraId.equals("0")) {
             mCameraId = "1";
         } else if (mCameraId.equals("1")) {
@@ -1404,7 +1385,6 @@ public class Camera2BasicFragment extends Fragment
                     if(CurrentCamera.equals("0")){//后置摄像头
                         orientation = 270;
                     }else if(CurrentCamera.equals("1")){//前置摄像头
-
                         orientation = 90;
                     }
                     break;
@@ -1412,7 +1392,6 @@ public class Camera2BasicFragment extends Fragment
                     orientation = 0;
                     break;
             }
-
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -1511,64 +1490,6 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-    private void requestPermission() {
-        // 当API大于 23 时，才动态申请权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(getActivity(), VIDEO_PERMISSIONS, VIDEO_PERMISSIONS_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case VIDEO_PERMISSIONS_CODE:
-                //权限请求失败
-                if (grantResults.length == VIDEO_PERMISSIONS.length) {
-                    for (int result : grantResults) {
-                        if (result != PackageManager.PERMISSION_GRANTED) {
-                            //弹出对话框引导用户去设置
-                            showDialog();
-                            Toast.makeText(getActivity(), "请求权限被拒绝", Toast.LENGTH_LONG).show();
-                            break;
-                        }
-                    }
-                } else {
-                    Toast.makeText(getActivity(), "已授权", Toast.LENGTH_LONG).show();
-                }
-                break;
-        }
-    }
-
-    //弹出提示框
-    private void showDialog() {
-        AlertDialog dialog = new AlertDialog.Builder(getContext())
-                .setMessage("录像需要相机、录音和读写权限，是否去设置？")
-                .setPositiveButton("是", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        goToAppSetting();
-                    }
-                })
-                .setNegativeButton("否", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .setCancelable(false)
-                .show();
-    }
-
-    // 跳转到当前应用的设置界面
-    private void goToAppSetting() {
-        Intent intent = new Intent();
-        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        Uri uri = Uri.fromParts("package", getActivity().getPackageName(), null);
-        intent.setData(uri);
-        startActivity(intent);
-    }
 
     //缩放事件手势处理
 
