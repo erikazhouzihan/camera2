@@ -49,6 +49,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaActionSound;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
@@ -396,14 +397,11 @@ public class Camera2BasicFragment extends Fragment
         private void process(CaptureResult result) {
             switch (mState) {
                 case STATE_PREVIEW: {
-                    // We have nothing to do when the camera preview is working normally.
-//                    startPreview();
                     break;
                 }
                 //等待对焦锁定
                 case STATE_WAITING_LOCK: {
                     //自动聚焦状态
-
                     if(mCameraId.equals("1")){
                         mState = STATE_PICTURE_TAKEN;
                         captureStillPicture();
@@ -429,7 +427,6 @@ public class Camera2BasicFragment extends Fragment
                         }
                     }
                     break;
-
                 }
                 case STATE_WAITING_PRECAPTURE: {
                     // CONTROL_AE_STATE can be null on some devices
@@ -713,17 +710,6 @@ public class Camera2BasicFragment extends Fragment
                     .show(getChildFragmentManager(), FRAGMENT_DIALOG);
         }
     }
-    public List<Size> getCameraOutputSizes(String cameraId, Class clz){
-        try {
-            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            return Arrays.asList(configs.getOutputSizes(clz));
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 
     /**
      * Opens the camera specified by {@link Camera2BasicFragment#mCameraId}.打开由 {@link Camera2BasicFragment#mCameraId} 指定的相机。
@@ -741,8 +727,6 @@ public class Camera2BasicFragment extends Fragment
             requestCameraPermission();
             return;
         }
-//        setUpCameraOutputs();
-//        configureTransform(width, height);
 
         try {
             Log.d(TAG, "tryAcquire");
@@ -818,10 +802,6 @@ public class Camera2BasicFragment extends Fragment
                 mCameraDevice.close();
                 mCameraDevice = null;
             }
-//            if (null != mImageReader) {
-//                mImageReader.close();
-//                mImageReader = null;
-//            }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
@@ -959,6 +939,11 @@ public class Camera2BasicFragment extends Fragment
      */
     public void takePicture() {
         System.out.println("takePicture方法调用了");
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         lockFocus();
 
 
@@ -981,8 +966,6 @@ public class Camera2BasicFragment extends Fragment
             Log.e(TAG, "run---------> 2");
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
-
-
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -1489,16 +1472,10 @@ public class Camera2BasicFragment extends Fragment
                     .create();
         }
     }
-
-
     //缩放事件手势处理
-
     public void handleZoom(boolean isZoomIn) {
         System.out.println("handleZoom++++++++++++++++++++++");
         if (mCameraDevice == null || characteristics == null || mPreviewRequestBuilder == null) {
-            System.out.println("mCameraDevice eeeeeeeeeeeeeeeeeeeeee"+mCameraDevice);
-            System.out.println("characteristics ssssssssssssssssssssss"+characteristics);
-            System.out.println("mPreviewRequestBuilder rrrrrrrrrrrrrrrrrrrrrrr"+mPreviewRequestBuilder);
             return;
         }
         // maxZoom 表示 active_rect 宽度除以 crop_rect 宽度的最大值
@@ -1529,7 +1506,7 @@ public class Camera2BasicFragment extends Fragment
 
     public void Reopen(){
         System.out.println("Reopen方法调用了");
-        stopPreview();
+//       stopPreview();
         closeCamera();
         Log.i(TAG, "Reopen: " + mTextureView.getWidth() + "X" + mTextureView.getHeight());
         openCamera(mTextureView.getWidth(),mTextureView.getHeight());
@@ -1549,18 +1526,14 @@ public class Camera2BasicFragment extends Fragment
 
         return choices[choices.length - 1];
     }
-    private void closePreviewSession() {
-        if (mCaptureSession != null) {
-            mCaptureSession.close();
-            mCaptureSession = null;
-        }
-    }
     private void selectImage() {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-
-        intent.setType("image/*");
-
-        getContext().startActivity(intent);
+        Intent intent;
+        if (Build.VERSION.SDK_INT < 19) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+        } else {
+            intent = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);         }
+        startActivityForResult(intent, REQUEST_CAMERA_PERMISSION);
     }
 
     private void setOrientations() throws CameraAccessException {
